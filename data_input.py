@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from openpyxl import load_workbook
 
 
@@ -7,7 +8,6 @@ class InputData:
 
         # get all file date on init
         self.input_dict = self.get_all_tables(file)
-        self.consumer_connections = self.read_consumer_connections()
 
     def get_all_tables(self, filename):
         """ Get all tables from a given workbook. Returns a dictionary of tables.
@@ -98,25 +98,3 @@ class InputData:
                     tables_dict[tbl.name]['dataframe'] = df
 
         return tables_dict
-
-    def read_consumer_connections(self):
-        # Read consumer data from input_dict
-        try:
-            consumer_connections = self.input_dict['consumer_connections']['dataframe']
-
-            # Calculate apparent power and save as in "Power". Apparent power is relevant for grid dimensioning.
-            consumer_connections['Power'] = consumer_connections['Power']/consumer_connections['cos phi']
-
-            consumer_connections = consumer_connections.filter(['Node ID', 'Power'])  # Only keep needed columns
-
-            # Remove duplicates and add load values (=nodes with multiple connected machines)
-            consumer_connections = consumer_connections.groupby(
-                'Node ID').sum()
-            consumer_connections['Node ID'] = consumer_connections.index
-
-            # Add consumer as node type.
-            consumer_connections.insert(0, "Type", ["Consumer"] * len(consumer_connections.index))
-
-            return consumer_connections
-        except KeyError:
-            print("No consumer connections in this input file.")
