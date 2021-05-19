@@ -3,7 +3,7 @@ import numpy as np
 from openpyxl import load_workbook
 
 
-class InputData:
+class data_input:
     def __init__(self, file):
 
         # get all file date on init
