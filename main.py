@@ -13,3 +13,4 @@ intake_material=input_data.input_dict["intake_material"]["dict"]
 
 Intake = c_in.Intake(intake_data,intake_material)
 Intake.total_intake_cost()
+print(Intake.total_intake_cost)
