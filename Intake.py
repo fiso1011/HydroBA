@@ -1,25 +1,28 @@
 import pandas as pd
 import numpy as np
 import Raw_Material as c_rm
+import data_input as c_di
 
 class Intake:
-    def __init__(self,site_data,intake_data,intake_material)
-        self.site_data=site_data
+    def __init__(self,intake_data,intake_material)
         self.intake_data=intake_data
         self.intake_material=intake_material
-        self.total_intake_cost=sum(self.intake_material.values())+sum(self.intake_labour.values())+sum(self.intake_misc.values())
+        self.total_intake_cost=sum(self.intake_cost.values())
+        #import relevant Dicts
+        c_di.data_storage.readingFunc()
+        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["hydro_data"]["dict"]
+        self.labour_cost = c_di.data_storage.readingFunc.inputdata.input_dict["labour_cost"]["dict"]
+        self.labour_time = c_di.data_storage.readingFunc.inputdata.input_dict["labour_time"]["dict"]
         # Dict to store Dimensions
         self.intake_dimensions= {}
-        #Dicts to store the Material cost, the labour cost miscellaneous
-        self.intake_material={}
-        self.intake_labour={}
-        self.intake_misc={}
-    #calls all other methods and returns the total intake cost and material volume in 2 dicts
+        #Dict to store the Material cost, the labour cost miscellaneous
+        self.intake_cost={}
+
+        #calls all other methods and returns the total intake cost and material volume in 2 dicts
     def total_intake_cost(self):
-         calculate_intake_dimensions()
-         calculate_intake_material()
-         calculate_intake_labour()
-         calculate_intake_dimensions()
+        calculate_intake_dimensions()
+        calculate_intake_material()
+        calculate_intake_labour()
 
     def calculate_intake_dimensions(self):
         q_worst=self.site_data["maximum flow"]*20                                                                         #Assumption in Micro Hydro Design manual
@@ -38,12 +41,13 @@ class Intake:
 
     def calculate_intake_material(self):
         if self.intake_material["structural_material"]=="RCC":
-            intake_concrete =c_rm(self.intake_dimensions)
-            Raw_Material.calculate_concrete()
+            intake_rcc =c_rm(self.intake_dimensions)
+            raw_mat_price=intake_rcc.calculate_concrete()
         elif self.intake_material["structural_material"]=="MAS":
-            intake_masonry=c_rm(self.intake_dimensions)
-            Raw_Material.calculate_masonry()
-            # return
+            intake_mas=c_rm(self.intake_dimensions)
+            raw_mat_price=intake_mas.calculate_masonry()
+        self.intake_cost["raw material"] = raw_mat_price
+        self.intake_cost["material"]=self.intake_material["coarse rake"]+self.intake_material["sluice gate"]
+
     def calculate_intake_labour(self):
-    def calculate_intake_misc(self):
-total_intake_cost()
+        self.intake_dimensions["foundation_vol"]
