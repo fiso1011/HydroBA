@@ -16,6 +16,7 @@ class Penstock:
         self.raw_material = c_di.data_storage.readingFunc.inputdata.input_dict["raw_material"]["dict"]
         # Dict to store Dimensions
         self.penstock_dimensions= {}
+        self.penstock_helpstorage = {}
         #Dict to store the Material cost, the labour cost miscellaneous
         self.penstock_cost={}
 
@@ -40,24 +41,34 @@ class Penstock:
         self.penstock_dimensions["gravel_sqm"]=gravel_sqm
         self.penstock_dimensions["contact_sqm"]=4 #to be edited later when v_pressureblock is available
 
+        self.penstock_helpstorage["pipe volume"]=(np.pi*((di_penstock/2)**2)+np.pi*((di_spillway/2)**2))*self.penstock_data["penstock length"]
+
     def calculate_penstock_material(self):
-        diameter=(((4 * (self.site_data["used flow"]) / self.penstock_data["velocity"]) / np.pi) ** (0.5))
+        di_penstock=(((4 * (self.site_data["used flow"]) / self.penstock_data["velocity"]) / np.pi) ** (0.5))
         penstock_rcc =c_rm.Raw_Material(self.penstock_dimensions)
         raw_mat_price=penstock_rcc.calculate_rcc()
-
         self.penstock_cost["raw material"] = raw_mat_price
+
         gravel=self.penstock_dimensions["gravel_sqm"]*0.1*self.raw_material["gravel"]
         mounting_bracket=self.penstock_material["mounting bracket"]*((self.penstock_data["penstock length"])/10)
+        #calculate pipe cost for both penstock and spillway pipe
         if self.penstock_material["structural_material"] == "PVC":
-            pipe_cost=(self.penstock_data["height drop"]/10)*50+diameter*50 #to be changed later, only pipe
-            joint_cost=(self.penstock_data["penstock length"]/10)*diameter*50 #to be changed later
-            bolts_cost=(pipe_cost+joint_cost)*0.1
+            pipe1_cost=((self.penstock_data["height drop"]/10)*50+di_penstock*50)*self.penstock_data["penstock length"] #to be changed later, only pipe
+            joint1_cost=(self.penstock_data["penstock length"]/10)*di_penstock*50 #to be changed later
+            bolts1_cost=(pipe1_cost+joint1_cost)*0.1
+            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*self.penstock_data["penstock length"] # to be changed later, only pipe
+            joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
+            bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
         elif self.penstock_material["structural_material"] == "HDPE":
-            pipe_cost = (self.penstock_data["height drop"] / 10) * 50 + diameter * 50  # to be changed later, only pipe
-            joint_cost = (self.penstock_data["penstock length"] / 10) * diameter * 50  # to be changed later
-            bolts_cost = (pipe_cost + joint_cost) * 0.1
-        pipe_total_cost=pipe_cost+joint_cost+bolts_cost
-        self.penstock_cost["material"]= gravel+mounting_bracket+pipe_total_cost
+            pipe1_cost = ((self.penstock_data["height drop"] / 10) * 50 + di_penstock * 50)*self.penstock_data["penstock length"]  # to be changed later, only pipe
+            joint1_cost = (self.penstock_data["penstock length"] / 10) * di_penstock * 50  # to be changed later
+            bolts1_cost = (pipe1_cost + joint1_cost) * 0.1
+            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*self.penstock_data["penstock length"] # to be changed later, only pipe
+            joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
+            bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
+        pipes_total_cost=pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost
+        self.penstock_cost["material"]= gravel+mounting_bracket+pipes_total_cost
+
         #HDPE und PVC vlt nur durch Faktor unterscheiden bei den Kosten??
     def calculate_penstock_labour(self):
         self.penstock_cost["excavation labour"] = (self.penstock_dimensions["excavation_vol"] * (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]

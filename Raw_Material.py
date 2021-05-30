@@ -20,7 +20,8 @@ class Raw_Material:
         sand_price=sand_vol*self.raw_material["sand"]
         gravel_price=gravel_vol*self.raw_material["gravel"]
         rcc_price=steel_price+cement_price+sand_price+gravel_price
-        return rcc_price
+        rcc_misc_material=rcc_price*(0.135+0.095) #13,5% Formwork wood, 9,5% threaded rods
+        return rcc_price+rcc_misc_material
 
     def calculate_cc(self):
         # 1 cbm cc: 1 cement / 3 sand / 5 gravel /Wasser: 0.5*vol_cement*(3.1/1)  wasserzementwert
