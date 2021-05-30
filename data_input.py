@@ -102,7 +102,7 @@ class data_input:
 class data_storage:
     def readingFunc():
         # Read input files
-        input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input.xlsx'
+        input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input.xlsm'
         input_data = data_input(input_data_path)  # Klasse mit den übergebenen Tabellen im Konstruktor
         data_storage.readingFunc.inputdata=input_data
         return input_data

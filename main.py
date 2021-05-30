@@ -5,6 +5,8 @@ import data_input as c_di
 import Intake as c_in
 import Channel as c_ch
 import Sandtrap as c_st
+import Penstock as c_ps
+import Powerhouse as c_ph
 
 # Read input files
 c_di.data_storage.readingFunc()
@@ -30,3 +32,17 @@ sandtrap_material=input_data.input_dict["sandtrap_material"]["dict"]
 Sandtrap = c_st.Sandtrap(sandtrap_data,sandtrap_material)
 Sandtrap.total_sandtrap_cost()
 print(Sandtrap.total_sandtrap_cost)  #total cost, detailed cost is stored in dict intake_cost
+
+penstock_data=input_data.input_dict["penstock_data"] ["dict"]
+penstock_material=input_data.input_dict["penstock_material"]["dict"]
+
+Penstock = c_ps.Penstock(penstock_data,penstock_material)
+Penstock.total_penstock_cost()
+print(Penstock.total_penstock_cost)  #total cost, detailed cost is stored in dict intake_cost
+
+powerhouse_data=input_data.input_dict["powerhouse_data"] ["dict"]
+powerhouse_material=input_data.input_dict["powerhouse_material"]["dict"]
+
+Powerhouse = c_ph.Powerhouse(powerhouse_data,powerhouse_material)
+Powerhouse.total_powerhouse_cost()
+print(Powerhouse.total_powerhouse_cost)  #total cost, detailed cost is stored in dict intake_cost

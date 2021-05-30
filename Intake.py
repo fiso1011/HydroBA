@@ -10,7 +10,7 @@ class Intake:
         self.total_intake_cost
         #import relevant Dicts
         c_di.data_storage.readingFunc()
-        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["hydro_data"]["dict"]
+        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["site_data"]["dict"]
         self.labour_cost = c_di.data_storage.readingFunc.inputdata.input_dict["labour_cost"]["dict"]
         self.labour_time = c_di.data_storage.readingFunc.inputdata.input_dict["labour_time"]["dict"]
         # Dict to store Dimensions
@@ -51,7 +51,7 @@ class Intake:
         self.intake_cost["material"]=self.intake_material["coarse rake"]+self.intake_material["sluice gate"]
 
     def calculate_intake_labour(self):
-        self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] * (1.1123*np.exp(0.4774*self.labour_time["excavating_factor"])) * self.labour_cost["noskill_worker"]
+        self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] * (1.1123*np.exp(0.4774*self.site_data["excavating_factor"])) * self.labour_cost["noskill_worker"]
         if self.intake_material["structural_material"] =="RCC":
             formwork_labour=self.intake_dimensions["contact_sqm"]*self.labour_time["formwork"]*self.labour_cost["skill_worker"]
             concreting_labour= (self.intake_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
