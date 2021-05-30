@@ -91,20 +91,35 @@ elif country_data["road_condition"]=="unpaved":
 
 material_transport_vol=Intake.intake_dimensions["structure_vol"]+Channel.channel_dimensions["structure_vol"]+Sandtrap.sandtrap_dimensions["structure_vol"]+Penstock.penstock_dimensions["structure_vol"]+Powerhouse.powerhouse_dimensions["structure_vol"]
 gravel_transport_vol=(Channel.channel_dimensions["gravel_sqm"]+Sandtrap.sandtrap_dimensions["gravel_sqm"]+Penstock.penstock_dimensions["gravel_sqm"]+Powerhouse.powerhouse_dimensions["gravel_sqm"])*0.1
-total_transport_weight=(material_transport_vol+gravel_transport_vol)*2500 #estimated 2500kg/m^3 density
+total_transport_weight=(material_transport_vol+gravel_transport_vol)*2300 #estimated 2300kg/m^3 density
 
 nat_transport_cost=nat_vehicle_cost*(1+total_transport_weight/3000)*1.5 #1 vehicle for rest of material, 3t per vehicle heavy material,1.5 journeys per vehicle to pay
 
 #calculate transportation at site
-hauling_cost=(country_data["walking_distance"]/0.55)*labour_cost["noskill_worker"]
-transport_by_foot=hauling_cost*(total_transport_weight/35)*2*2 #35kg, walking speed 2km/h, 2 way, factor 2 transport along channel...
+hauling_cost=(country_data["walking_distance"]/0.85)*labour_cost["noskill_worker"]
+transport_by_foot=hauling_cost*(total_transport_weight/40)*2 #40kg, walking speed 3km/h, 2 way
+
+print("import and transport cost")
+print(int_transport_cost)
+print(flight_cost+int_transport_cost+nat_transport_cost+transport_by_foot)
 
 #calculate risk on top for each division
+#planning, währung,rohr,turbine,...
 #=total investing cost
 
 #calculate running cost labour
 #calculate running cost material
+
 #calculate running cost abbreviation
+    #Intake+Channel+Sandtrap:50 years
+waterway_depreciation=(Intake.total_intake_cost+Channel.total_channel_cost+Sandtrap.total_sandtrap_cost)/50
+    #Penstock:30
+penstock_depreciation=Penstock.total_penstock_cost/30
+    #Powerhouse,TG-Gruppe:30
+tg_group_depreciation=Powerhouse.powerhouse_helpstorage["turbine cost"]/30
+    #Regler,electrical:20
+electrical_depreciation=Powerhouse.powerhouse_helpstorage["electric_equipment_cost"]
 
 #calculate totall.......
+#wirtschaftlichkeit rechnung, annuitäten...
 
