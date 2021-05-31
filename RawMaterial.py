@@ -1,10 +1,7 @@
-import data_input as c_di
 class Raw_Material:
-    def __init__(self,dimensions):
+    def __init__(self,dimensions,raw_material):
         self.dimensions=dimensions
-        # import relevant Dicts
-        c_di.data_storage.readingFunc()
-        self.raw_material = c_di.data_storage.readingFunc.inputdata.input_dict["raw_material"]["dict"]
+        self.raw_material=raw_material
 
     def calculate_rcc(self):
         # 1cbm RCC: volumes 0.16 steel/ 1 cement/ 2 sand / 3 gravel / Wasser: 0.5*vol_cement*(3.1/1)  wasserzementwert

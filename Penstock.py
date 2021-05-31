@@ -1,19 +1,16 @@
-import pandas as pd
 import numpy as np
-import Raw_Material as c_rm
-import data_input as c_di
+import RawMaterial as c_rm
 
 class Penstock:
-    def __init__(self,penstock_data,penstock_material):
-        self.penstock_data=penstock_data
-        self.penstock_material=penstock_material
+    def __init__(self,input_data):
+        self.penstock_data=input_data.input_dict["penstock_data"] ["dict"]
+        self.penstock_material=input_data.input_dict["penstock_material"]["dict"]
         self.total_penstock_cost
         #import relevant Dicts
-        c_di.data_storage.readingFunc()
-        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["site_data"]["dict"]
-        self.labour_cost = c_di.data_storage.readingFunc.inputdata.input_dict["labour_cost"]["dict"]
-        self.labour_time = c_di.data_storage.readingFunc.inputdata.input_dict["labour_time"]["dict"]
-        self.raw_material = c_di.data_storage.readingFunc.inputdata.input_dict["raw_material"]["dict"]
+        self.site_data = input_data.input_dict["site_data"]["dict"]
+        self.labour_cost = input_data.input_dict["labour_cost"]["dict"]
+        self.labour_time = input_data.input_dict["labour_time"]["dict"]
+        self.raw_material = input_data.input_dict["raw_material"]["dict"]
         # Dict to store Dimensions
         self.penstock_dimensions= {}
         self.penstock_helpstorage = {}
@@ -28,7 +25,7 @@ class Penstock:
         self.total_penstock_cost=sum(self.penstock_cost.values())
     def calculate_penstock_dimensions(self):
         v_penstock=self.penstock_data["velocity"]
-        di_penstock=((4*(self.site_data["used flow"])/v_penstock)/np.pi)**(0.5)
+        di_penstock=((4*(self.site_data["used_flow"])/v_penstock)/np.pi)**(0.5)
         di_spillway=self.penstock_data["di_spillway"] #have to run macro in Excel before running
         v_anker=np.pi*((di_penstock/4)**2)*4*di_penstock*((self.penstock_data["penstock length"])/10) #viertel durchmesser, 4fache länge von Durchmesser
         v_pressureblock=8 #to be changed later, minus diameter of penstock inside plus gravel
@@ -44,26 +41,28 @@ class Penstock:
         self.penstock_helpstorage["pipe volume"]=(np.pi*((di_penstock/2)**2)+np.pi*((di_spillway/2)**2))*self.penstock_data["penstock length"]
 
     def calculate_penstock_material(self):
-        di_penstock=(((4 * (self.site_data["used flow"]) / self.penstock_data["velocity"]) / np.pi) ** (0.5))
-        penstock_rcc =c_rm.Raw_Material(self.penstock_dimensions)
+        di_penstock=(((4 * (self.site_data["used_flow"]) / self.penstock_data["velocity"]) / np.pi) ** (0.5))
+        penstock_rcc =c_rm.Raw_Material(self.penstock_dimensions,self.raw_material)
         raw_mat_price=penstock_rcc.calculate_rcc()
         self.penstock_cost["raw material"] = raw_mat_price
 
         gravel=self.penstock_dimensions["gravel_sqm"]*0.1*self.raw_material["gravel"]
         mounting_bracket=self.penstock_material["mounting bracket"]*((self.penstock_data["penstock length"])/10)
         #calculate pipe cost for both penstock and spillway pipe
-        if self.penstock_material["structural_material"] == "PVC":
+        if self.penstock_material["structural material"] == "PVC":
             pipe1_cost=((self.penstock_data["height drop"]/10)*50+di_penstock*50)*self.penstock_data["penstock length"] #to be changed later, only pipe
             joint1_cost=(self.penstock_data["penstock length"]/10)*di_penstock*50 #to be changed later
             bolts1_cost=(pipe1_cost+joint1_cost)*0.1
-            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*self.penstock_data["penstock length"] # to be changed later, only pipe
+            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*\
+                         self.penstock_data["penstock length"] # to be changed later, only pipe
             joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
-        elif self.penstock_material["structural_material"] == "HDPE":
+        elif self.penstock_material["structural material"] == "HDPE":
             pipe1_cost = ((self.penstock_data["height drop"] / 10) * 50 + di_penstock * 50)*self.penstock_data["penstock length"]  # to be changed later, only pipe
             joint1_cost = (self.penstock_data["penstock length"] / 10) * di_penstock * 50  # to be changed later
             bolts1_cost = (pipe1_cost + joint1_cost) * 0.1
-            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*self.penstock_data["penstock length"] # to be changed later, only pipe
+            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*\
+                         self.penstock_data["penstock length"] # to be changed later, only pipe
             joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
         pipes_total_cost=pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost
@@ -71,7 +70,8 @@ class Penstock:
 
         #HDPE und PVC vlt nur durch Faktor unterscheiden bei den Kosten??
     def calculate_penstock_labour(self):
-        self.penstock_cost["excavation labour"] = (self.penstock_dimensions["excavation_vol"] * (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
+        self.penstock_cost["excavation labour"] = (self.penstock_dimensions["excavation_vol"] *\
+                                                   (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
         self.penstock_cost["laying"] = (self.penstock_dimensions["gravel_sqm"])*3*self.labour_time["laying"]*self.labour_cost["noskill_worker"]#gravel
         formwork_labour = self.penstock_dimensions["contact_sqm"] * self.labour_time["formwork"] * self.labour_cost["skill_worker"]
         concreting_labour = (self.penstock_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]

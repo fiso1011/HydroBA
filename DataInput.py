@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from openpyxl import load_workbook
 
 
@@ -98,13 +97,3 @@ class data_input:
                     tables_dict[tbl.name]['dataframe'] = df
 
         return tables_dict
-
-class data_storage:
-    def readingFunc():
-        # Read input files
-        input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input.xlsm'
-        input_data = data_input(input_data_path)  # Klasse mit den übergebenen Tabellen im Konstruktor
-        data_storage.readingFunc.inputdata=input_data
-        return input_data
-
-

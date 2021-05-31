@@ -1,20 +1,17 @@
-import pandas as pd
 import numpy as np
-import Raw_Material as c_rm
-import data_input as c_di
+import RawMaterial as c_rm
 
 class Powerhouse:
-    def __init__(self,powerhouse_data,powerhouse_material):
-        self.powerhouse_data=powerhouse_data
-        self.powerhouse_material=powerhouse_material
+    def __init__(self,input_data):
+        self.powerhouse_data=input_data.input_dict["powerhouse_data"] ["dict"]
+        self.powerhouse_material=input_data.input_dict["powerhouse_material"]["dict"]
         self.total_powerhouse_cost
         #import relevant Dicts
-        c_di.data_storage.readingFunc()
-        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["site_data"]["dict"]
-        self.penstock_data = c_di.data_storage.readingFunc.inputdata.input_dict["penstock_data"]["dict"]
-        self.labour_cost = c_di.data_storage.readingFunc.inputdata.input_dict["labour_cost"]["dict"]
-        self.labour_time = c_di.data_storage.readingFunc.inputdata.input_dict["labour_time"]["dict"]
-        self.raw_material = c_di.data_storage.readingFunc.inputdata.input_dict["raw_material"]["dict"]
+        self.site_data = input_data.input_dict["site_data"]["dict"]
+        self.penstock_data = input_data.input_dict["penstock_data"]["dict"]
+        self.labour_cost = input_data.input_dict["labour_cost"]["dict"]
+        self.labour_time = input_data.input_dict["labour_time"]["dict"]
+        self.raw_material = input_data.input_dict["raw_material"]["dict"]
         # Dict to store Dimensions
         self.powerhouse_dimensions= {}
         self.powerhouse_helpstorage={}
@@ -30,7 +27,8 @@ class Powerhouse:
         self.calculate_powerhouse_labour()
         self.total_powerhouse_cost=sum(self.powerhouse_cost.values())
     def calculate_powerhouse_dimensions(self):
-        exc_1=((5+2)*10**2)*np.tan(np.deg2rad(self.penstock_data["height drop"]/self.penstock_data["penstock length"]))*0.5 #slope excavation
+        exc_1=((5+2)*10**2)*np.tan(np.deg2rad(self.penstock_data["height drop"]/self.penstock_data["penstock length"]))*\
+              0.5 #slope excavation
         exc_2=5*10*(0.5+0.1)+(1.5+2*self.powerhouse_data["wall_width"])*1.5*5 #Foundation and Channel under powerhouse
         foundation_vol=5*10*0.5
         wall_vol=(2*(5+8)*2.5+(1.5*5*2+(1.5**2)))*self.powerhouse_data["wall_width"]
@@ -42,9 +40,9 @@ class Powerhouse:
         self.help2["structure_vol"]=wall_vol
 
     def calculate_powerhouse_material(self):
-        powerhouse_rcc =c_rm.Raw_Material(self.help1)
+        powerhouse_rcc =c_rm.Raw_Material(self.help1,self.raw_material)
         raw_mat_price1=powerhouse_rcc.calculate_rcc()
-        powerhouse_mas = c_rm.Raw_Material(self.help2)
+        powerhouse_mas = c_rm.Raw_Material(self.help2,self.raw_material)
         raw_mat_price2 = powerhouse_mas.calculate_masonry()
         raw_mat_price=raw_mat_price1+raw_mat_price2
 
@@ -52,12 +50,14 @@ class Powerhouse:
         gravel=self.powerhouse_dimensions["gravel_sqm"]*0.1*self.raw_material["gravel"]
 
         #tailrace pipe
-        if self.powerhouse_material["structural_material"] == "PVC":
-            pipe_cost=((self.powerhouse_data["tailrace drop"]/10)*50+self.powerhouse_data["di_tailrace"]*50)*self.powerhouse_data["tailrace length"] #to be changed later, only pipe
+        if self.powerhouse_material["structural material"] == "PVC":
+            pipe_cost=((self.powerhouse_data["tailrace drop"]/10)*50+self.powerhouse_data["di_tailrace"]*50)*\
+                      self.powerhouse_data["tailrace length"] #to be changed later, only pipe
             joint_cost=(self.powerhouse_data["tailrace length"]/10)*self.powerhouse_data["di_tailrace"]*50 #to be changed later
             bolts_cost=(pipe_cost+joint_cost)*0.1
-        elif self.powerhouse_material["structural_material"] == "HDPE":
-            pipe_cost = ((self.penstock_data["tailrace drop"] / 10) * 50 + self.powerhouse_data["di_tailrace"] * 50)*self.powerhouse_data["tailrace length"]  # to be changed later, only pipe
+        elif self.powerhouse_material["structural material"] == "HDPE":
+            pipe_cost = ((self.penstock_data["tailrace drop"] / 10) * 50 + self.powerhouse_data["di_tailrace"] * 50)*\
+                        self.powerhouse_data["tailrace length"]  # to be changed later, only pipe
             joint_cost = (self.penstock_data["tailrace length"] / 10) * self.powerhouse_data["di_tailrace"] * 50  # to be changed later
             bolts_cost = (pipe_cost + joint_cost) * 0.1
         tailrace_total_cost=pipe_cost+joint_cost+bolts_cost
@@ -65,24 +65,28 @@ class Powerhouse:
         self.powerhouse_helpstorage["pipe volume"] =np.pi*((self.powerhouse_data["di_tailrace"]/2)**2)*self.powerhouse_data["tailrace length"]
 
         #Turbine price
-        if self.powerhouse_material["turbine_type"]=="FR":
+        if self.powerhouse_material["turbine type"]=="FR":
             turbine_cost=(self.penstock_data["height drop"])*50+self.site_data["power"]*50 #to be edited later
-        elif self.powerhouse_material["turbine_type"]=="PE":
+        elif self.powerhouse_material["turbine type"]=="PE":
             turbine_cost = (self.penstock_data["height drop"]) * 50 + self.site_data["power"] * 50  # to be edited later
-        elif self.powerhouse_material["turbine_type"]=="CR":
+        elif self.powerhouse_material["turbine type"]=="CR":
             turbine_cost = (self.penstock_data["height drop"]) * 50 + self.site_data["power"] * 50  # to be edited later
 
+        valves= 50#fixed price to be edited later  #butterfly valve and emergency electric valve
+        roofing=50 #fixed price to be edited later
         load_regulator=self.powerhouse_material["load_regulator"]*(self.site_data["power"]/10)
         lightning_protection=self.powerhouse_material["lightning protection"]
         electrics_equipment=self.powerhouse_material["electrics material"]*self.site_data["power"] # to be edited later
 
-        self.powerhouse_cost["material"]= gravel+tailrace_total_cost+turbine_cost+load_regulator+lightning_protection+electrics_equipment
+        self.powerhouse_cost["material"]= valves+roofing+gravel+tailrace_total_cost+turbine_cost+load_regulator+\
+                                          lightning_protection+electrics_equipment
 
         self.powerhouse_helpstorage["turbine_cost"]=turbine_cost
-        self.powerhouse_helpstorage["electric_equipment_cost"] = load_regulator+lightning_protection+electrics_equipment
+        self.powerhouse_helpstorage["electric_equipment_cost"] = valves+load_regulator+lightning_protection+electrics_equipment
 
     def calculate_powerhouse_labour(self):
-        self.powerhouse_cost["excavation labour"] = (self.powerhouse_dimensions["excavation_vol"] * (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
+        self.powerhouse_cost["excavation labour"] = (self.powerhouse_dimensions["excavation_vol"] *\
+                                                     (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
         self.powerhouse_cost["laying"] = (self.powerhouse_dimensions["gravel_sqm"])*3*self.labour_time["laying"]*self.labour_cost["noskill_worker"]#gravel
 
         concreting_labour = (self.help1["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
@@ -92,4 +96,5 @@ class Powerhouse:
         turbine_installation=50 # to be edited later
         electrical_installation=50 # to be edited later switch cabinet and load control
         self.powerhouse_cost["structure labour"] = concreting_labour+masonry_labour
-        self.powerhouse_cost["installation labour"] =building_installation+tailrace_installation+turbine_installation+electrical_installation
+        self.powerhouse_cost["installation labour"] =building_installation+tailrace_installation+\
+                                                     turbine_installation+electrical_installation

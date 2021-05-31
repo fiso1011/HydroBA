@@ -1,20 +1,17 @@
-import pandas as pd
 import numpy as np
-import Raw_Material as c_rm
-import data_input as c_di
+import RawMaterial as c_rm
 
 class Sandtrap:
-    def __init__(self,sandtrap_data,sandtrap_material):
-        self.sandtrap_data=sandtrap_data
-        self.sandtrap_material=sandtrap_material
+    def __init__(self,input_data):
+        self.sandtrap_data=input_data.input_dict["sandtrap_data"] ["dict"]
+        self.sandtrap_material=input_data.input_dict["sandtrap_material"]["dict"]
         self.total_sandtrap_cost
         #import relevant Dicts
-        c_di.data_storage.readingFunc()
-        self.site_data = c_di.data_storage.readingFunc.inputdata.input_dict["site_data"]["dict"]
-        self.channel_data = c_di.data_storage.readingFunc.inputdata.input_dict["channel_data"]["dict"]
-        self.labour_cost = c_di.data_storage.readingFunc.inputdata.input_dict["labour_cost"]["dict"]
-        self.labour_time = c_di.data_storage.readingFunc.inputdata.input_dict["labour_time"]["dict"]
-        self.raw_material = c_di.data_storage.readingFunc.inputdata.input_dict["raw_material"]["dict"]
+        self.site_data = input_data.input_dict["site_data"]["dict"]
+        self.channel_data = input_data.input_dict["channel_data"]["dict"]
+        self.labour_cost = input_data.input_dict["labour_cost"]["dict"]
+        self.labour_time = input_data.input_dict["labour_time"]["dict"]
+        self.raw_material = input_data.input_dict["raw_material"]["dict"]
         # Dict to store Dimensions
         self.sandtrap_dimensions= {}
         #Dict to store the Material cost, the labour cost miscellaneous
@@ -27,26 +24,26 @@ class Sandtrap:
         self.calculate_sandtrap_labour()
         self.total_sandtrap_cost=sum(self.sandtrap_cost.values())
     def calculate_sandtrap_dimensions(self):
-        slope=self.site_data["terrain slope"]
+        slope=self.site_data["terrain_slope"]
         wall_width = self.sandtrap_data["wall_width"]
 
-        channel_width = (self.site_data["used flow"] / (self.channel_data["channel roughness"] * 0.48 * np.power(self.channel_data["channel slope"],0.5))) ** (3 / 8)
+        channel_width = (self.site_data["used_flow"] / (self.channel_data["channel roughness"] * 0.48 * np.power(self.channel_data["channel slope"],0.5))) ** (3 / 8)
         channel_perimeter = channel_width * (1 + 2 * 1.3)
         channel_area = channel_width ** 2
-        basin_width = np.sqrt(self.site_data["used flow"] / (1.05 * 0.2))  # 0.2m/2 maximum suspension start Zanke
+        basin_width = np.sqrt(self.site_data["used_flow"] / (1.05 * 0.15))  # 0.15m/2 maximum suspension start Zanke
         basin_height = basin_width * 1.25
-        v_channel = self.site_data["used flow"] / channel_area
-        v_basin = 0.2
+        v_channel = self.site_data["used_flow"] / channel_area
+        v_basin = 0.15 #basin geschwindigkeit
         dyn_viscosity = (1 / (0.1 * ((self.site_data["water_temperature"] + 273.15) ** 2) - 34.335 * (self.site_data["water_temperature"] + 273.15) + 2472))
         kin_viscosity = dyn_viscosity / 1000
         max_diameter = 0.0002
-        d_factor = (((((2650 / 1000) - 1) * 9.81) / (kin_viscosity ** 2)) ** (1 / 3)) * max_diameter
+        d_factor = (((((2650 / 997) - 1) * 9.81) / (kin_viscosity ** 2)) ** (1 / 3)) * max_diameter
         v_wo = ((11 * kin_viscosity) / max_diameter) * (np.sqrt(1 + 0.01 * ((d_factor) ** 3)) - 1)
-        k_factor = (1 / ((v_basin ** 0.4) * (v_channel ** 0.3))) * (1 / np.tan(np.deg2rad(10))) * (1 / ((9.81 * (1.05 * (basin_width**2) / (2.98 * basin_width))) ** 0.15))
+        k_factor = (1 / ((v_basin ** 0.4) * (v_channel ** 0.3))) * (1 / np.tan(np.deg2rad(5))) * (1 / ((9.81 * (1.05 * (basin_width**2) / (2.98 * basin_width))) ** 0.15))
         v_w = v_wo - (0.21 / k_factor)
         settling_lenght = (v_basin / v_w) * basin_height
-        Uv_length = (basin_height - channel_width) / np.tan(np.deg2rad(15))
-        spillway_length = (self.site_data["used flow"] * 1.3 * 0.3564) / (0.5 * ((0.15) ** (3 / 2)))
+        Uv_length = (basin_height - channel_width) / np.tan(np.deg2rad(5))
+        spillway_length = (self.site_data["used_flow"] * 1.3 * 0.3564) / (0.5 * ((0.15) ** (3 / 2)))
         # Dimensions of Part1
         a1 = (0.84 / 2.98) * channel_perimeter  # channel-sided side length of the truncated pyramid
         a2 = 0.84 * basin_width  # basin-sided side length of the truncated pyramid
@@ -70,8 +67,11 @@ class Sandtrap:
         a_3_3=0.75*pbasin_width*(pbasin_width*1.5+(pbasin_width+2+wall_width)*2) #upper part transition from sandtrap to pressure basin
 
         #Excavation Volume
-        exc_vol1=v_1_2+a_1_2*((wall_width)+0.1)+((((basin_width+2*wall_width)**2)*np.tan(np.deg2rad(slope))*0.5)/(((basin_width)**2)*0.75+(2*0.75*basin_width)*wall_width))*(v_1_1+a_1_1*wall_width)
-        exc_vol2=v_2_2+(a_2_2+settling_lenght*settling_lenght*0.04)*(wall_width+0.1)+(settling_lenght*settling_lenght*0.04*0.5*basin_width)+((((basin_width+2*wall_width)**2)*np.tan(np.deg2rad(slope))*0.5)/(((basin_width)**2)*0.75+(2*0.75*basin_width)*wall_width))*(0.75*(basin_width**2)*settling_lenght+0.75*basin_width*2*settling_lenght*wall_width)
+        exc_vol1=v_1_2+a_1_2*((wall_width)+0.1)+((((basin_width+2*wall_width)**2)*np.tan(np.deg2rad(slope))*0.5)/\
+                                                 (((basin_width)**2)*0.75+(2*0.75*basin_width)*wall_width))*(v_1_1+a_1_1*wall_width)
+        exc_vol2=v_2_2+(a_2_2+settling_lenght*settling_lenght*0.04)*(wall_width+0.1)+(settling_lenght*settling_lenght*0.04*0.5*basin_width)+\
+                 ((((basin_width+2*wall_width)**2)*np.tan(np.deg2rad(slope))*0.5)/(((basin_width)**2)*0.75+(2*0.75*basin_width)*wall_width))*\
+                 (0.75*(basin_width**2)*settling_lenght+0.75*basin_width*2*settling_lenght*wall_width)
         exc_vol3=v_3_1+a_3_1*(wall_width+0.1)+a_3_2*wall_width+((pbasin_width+2*wall_width)**3)*(np.tan(np.deg2rad(slope))*0.5)
         #Gravel Area
         gravel_sqm1=(a_1_2+a_2_2+(settling_lenght**2)*0.04) #sandtrap
@@ -96,11 +96,11 @@ class Sandtrap:
         self.sandtrap_dimensions["contact_sqm"]=(a_1_1+a_1_2+a_2_1+a_2_2+a_3_1+a_3_2+a_3_3)*1.5 #formwork or surface finish area
 
     def calculate_sandtrap_material(self):
-        if self.sandtrap_material["structural_material"]=="RCC":
-            sandtrap_rcc =c_rm.Raw_Material(self.sandtrap_dimensions)
+        if self.sandtrap_material["structural material"]=="RCC":
+            sandtrap_rcc =c_rm.Raw_Material(self.sandtrap_dimensions,self.raw_material)
             raw_mat_price=sandtrap_rcc.calculate_rcc()
-        elif self.sandtrap_material["structural_material"]=="MAS":
-            sandtrap_mas=c_rm.Raw_Material(self.sandtrap_dimensions)
+        elif self.sandtrap_material["structural material"]=="MAS":
+            sandtrap_mas=c_rm.Raw_Material(self.sandtrap_dimensions,self.raw_material)
             raw_mat_price=sandtrap_mas.calculate_masonry()
         self.sandtrap_cost["raw material"] = raw_mat_price
 
@@ -110,13 +110,14 @@ class Sandtrap:
         self.sandtrap_cost["material"]= gravel+flush_gate+fine_rake
 
     def calculate_sandtrap_labour(self):
-        self.sandtrap_cost["excavation labour"] = (self.sandtrap_dimensions["excavation_vol"] * (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
+        self.sandtrap_cost["excavation labour"] = (self.sandtrap_dimensions["excavation_vol"] *\
+                                                   (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
         self.sandtrap_cost["laying"] = (self.sandtrap_dimensions["gravel_sqm"])*3*self.labour_time["laying"]*self.labour_cost["noskill_worker"]#gravel
-        if self.sandtrap_material["structural_material"] =="RCC":
+        if self.sandtrap_material["structural material"] =="RCC":
             formwork_labour = self.sandtrap_dimensions["contact_sqm"] * self.labour_time["formwork"] * self.labour_cost["skill_worker"]
             concreting_labour = (self.sandtrap_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
             self.sandtrap_cost["structure labour"] = formwork_labour + concreting_labour
-        elif self.sandtrap_material["structural_material"] =="MAS":
+        elif self.sandtrap_material["structural material"] =="MAS":
             surface_labour = self.sandtrap_dimensions["contact_sqm"] * self.labour_time["plastering"] * self.labour_cost["skill_worker"]  # cement finish
             mas_labour = (self.sandtrap_dimensions["structure_vol"] * self.labour_time["bricklaying"]) * self.labour_cost["skill_worker"]
             self.sandtrap_cost["structure labour"] = surface_labour + mas_labour
