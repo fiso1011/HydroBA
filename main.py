@@ -43,55 +43,39 @@ labour_cost = input_data.input_dict["labour_cost"]["dict"]
 
 #Calculate Miscellaneous cost for building structure (tools etc)
 structure_misc_cost=(Intake.intake_cost["raw material"]+Channel.channel_cost["raw material"]+Sandtrap.sandtrap_cost["raw material"]+\
-Penstock.penstock_cost["raw material"]+Powerhouse.powerhouse_cost["raw material"])*0.08#8% material for total masonry or concrete
+Penstock.penstock_cost["raw material"]+Powerhouse.powerhouse_cost["raw material"])*0.05 #5% material for total masonry or concrete
 
-#Calculate Miscellaneous cost of tools&material for installations of penstock and powerhouse
-installation_misc_cost=50 #to be edited later
+#Calculate Miscellaneous cost of tools&material for installations of electrics
+installation_misc_cost=Powerhouse.powerhouse_cost["material"]*0.05 #5% material and tools
 print("misc material cost")
 print(structure_misc_cost+installation_misc_cost)
 
 #calculate import cost
-Powerhouse.powerhouse_helpstorage["turbine_cost"]+Powerhouse.powerhouse_helpstorage["electric_equipment_cost"]*country_data["import tax"]
+import_cost=(Powerhouse.powerhouse_helpstorage["turbine_cost"]+Powerhouse.powerhouse_helpstorage["electric_equipment_cost"])*country_data["import tax"]
 
 #calculate delivery to site (international port: turbine, pipes)
-flight_cost =50*(0.05*site_data["used_flow"]) #50 and 0.05 factor be edited later, dependent on used flow volume turbine and pipe size
+flight_cost =5500 #1000kg turbine (gibt es hier Unterschiede zwischen Typen? Gewicht als Input?
 
-#calculate delivery cost of 1 truckload to building site of goods that arrive in international port/airport: 1 truck 35m^3 volume 1 way from international port
-if country_data["road_condition"]=="paved":
-    int_vehicle_cost = (country_data["int_port_distance"])*((labour_cost["skill_worker"]*2*(1/70))+0.3*country_data["petrol_price"])*\
-    (0.05 * site_data["used_flow"])*1.1 #1 way trip 1 vehicle 70km/h,40l/100km petrol,*weight factor+10% marge
-elif country_data["road_condition"]=="unpaved":
-    int_vehicle_cost = (country_data["int_port_distance"])*((labour_cost["skill_worker"]*2*(1/30))+0.45*country_data["petrol_price"])*\
-    (0.05 * site_data["used flow"])*1.1 #30km/h,60l/100km petrol,*weight factor+10% marge
+#calculate delivery cost of 1 truckload to building site of goods that arrive in international port/airport:1 way from international port
+turbine_transport_cost = country_data["truck_cost"]*country_data["int_port_distance"]*1#imported turbine 1 ton
 
 #calculate total pipe volume to be transported
-pipes_transport_vol=Penstock.penstock_helpstorage["pipe volume"]+Powerhouse.powerhouse_helpstorage["pipe volume"]
-#calculate the total transport cost for pipes and turbine from international port destination
-int_transport_cost=int_vehicle_cost*(1+pipes_transport_vol/(35*0.8))*1.5 #1 vehicle for turbine, 0.8% of storage volume are used, 1.5 journeys per vehicle to pay
+pipes_transport_volume=(Penstock.penstock_helpstorage["pipe volume"]+Powerhouse.powerhouse_helpstorage["pipe volume"]) # 0,66
+if (pipes_transport_volume/0.8)<35:
+    pipe_transport_cost=country_data["truck_cost"]*country_data["int_port_distance"]*1
+else:
+    pipe_transport_cost= country_data["truck_cost"]*country_data["int_port_distance"]*(pipes_transport_volume/(35*0.8)) #80% of Volume used
 
-#calculate delivery cost of 1 truckload to building site from next big city where building material can be purchased (building material and other material)
-if country_data["road_condition"]=="paved":
-    nat_vehicle_cost = (country_data["nat_port_distance"])*((labour_cost["skill_worker"]*2*(1/70))+0.3*country_data["petrol_price"])*\
-                       (0.05 * site_data["used_flow"])*1.1 #70km/h,30l/100km,*weight factor+10% marge
-elif country_data["road_condition"]=="unpaved":
-    nat_vehicle_cost = (country_data["nat_port_distance"])*((labour_cost["skill_worker"]*2*(1/30))+0.45*country_data["petrol_price"])*\
-                       (0.05 * site_data["used flow"])*1.1 #30km/h,45l/100km,*weight factor+10% marge
 #calculate total volume building material, estimate total weight
-material_transport_vol=Intake.intake_dimensions["structure_vol"]+Channel.channel_dimensions["structure_vol"]+Sandtrap.sandtrap_dimensions["structure_vol"]+\
-                       Penstock.penstock_dimensions["structure_vol"]+Powerhouse.powerhouse_dimensions["structure_vol"]
-gravel_transport_vol=(Channel.channel_dimensions["gravel_sqm"]+Sandtrap.sandtrap_dimensions["gravel_sqm"]+Penstock.penstock_dimensions["gravel_sqm"]+\
-                      Powerhouse.powerhouse_dimensions["gravel_sqm"])*0.1
-total_transport_weight=(material_transport_vol+gravel_transport_vol)*2300 #estimated 2300kg/m^3 density
+material_transport_vol=Intake.intake_dimensions["structure_vol"]+Channel.channel_dimensions["structure_vol"]+Sandtrap.sandtrap_dimensions["structure_vol"]+Penstock.penstock_dimensions["structure_vol"]+Powerhouse.powerhouse_dimensions["structure_vol"]
+gravel_transport_vol=(Channel.channel_dimensions["gravel_sqm"]+Sandtrap.sandtrap_dimensions["gravel_sqm"]+Penstock.penstock_dimensions["gravel_sqm"]+Powerhouse.powerhouse_dimensions["gravel_sqm"])*0.1
+structure_transport_weight=(material_transport_vol*2300+gravel_transport_vol*1500)/1000 #estimated density
+print(structure_transport_weight)
 #calculate the total transport cost for building material from next city
-nat_transport_cost=nat_vehicle_cost*(1+total_transport_weight/3000)*1.5 #1 vehicle for rest of material, 3t per vehicle heavy material,1.5 journeys per vehicle to pay
+nat_transport_cost= country_data["ton_km_cost"]*structure_transport_weight*country_data["nat_port_distance"]
 
-#calculate transportation at site by workers
-hauling_cost=(site_data["walking_distance"]/0.85)*labour_cost["noskill_worker"]
-transport_by_foot=hauling_cost*(total_transport_weight/50)*2 #50kg, walking speed 3km/h, 2 way
-
+total_import_transport=import_cost+flight_cost+turbine_transport_cost+pipe_transport_cost+nat_transport_cost
 print("import and transport cost")
-print(int_transport_cost)
-print(flight_cost+int_transport_cost+nat_transport_cost+transport_by_foot)
 
 #calculate risk on top for each division
 #planning, währung,rohr,turbine,...
@@ -113,3 +97,4 @@ electrical_depreciation=Powerhouse.powerhouse_helpstorage["electric_equipment_co
 #calculate totall.......
 #wirtschaftlichkeit rechnung, annuitäten...
 
+#plant hours uptime

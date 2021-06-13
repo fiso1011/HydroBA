@@ -45,8 +45,9 @@ class Intake:
         elif self.intake_material["structural material"]=="MAS":
             intake_mas=c_rm.Raw_Material(self.intake_dimensions,self.raw_material)
             raw_mat_price=intake_mas.calculate_masonry()
+            self.intake_dimensions["structure_vol"]=self.intake_dimensions["structure_vol"]+self.intake_dimensions["contact_sqm"]*0.02 #cement finish vol for masonry walls
         self.intake_cost["raw material"] = raw_mat_price
-        self.intake_cost["material"]=self.intake_material["coarse rake"]+self.intake_material["sluice gate"]
+        self.intake_cost["material"]=self.intake_material["coarse rake"]+185.38*np.exp(2.3306*np.sqrt(self.site_data["average_flow"])) #average flow sized sluice gate
 
     def calculate_intake_labour(self):
         self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] *\
@@ -54,9 +55,11 @@ class Intake:
         if self.intake_material["structural material"] =="RCC":
             formwork_labour=self.intake_dimensions["contact_sqm"]*self.labour_time["formwork"]*self.labour_cost["skill_worker"]
             concreting_labour= (self.intake_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
-            self.intake_cost["structure labour"] = formwork_labour+concreting_labour
+            hauling_cost = ((self.intake_dimensions["structure_vol"] * 2300) / 50) * 2 * self.labour_cost["hauling_cost"]
+            self.intake_cost["structure labour"] = formwork_labour+concreting_labour+hauling_cost
         elif self.intake_material["structural material"] =="MAS":
             surface_labour=self.intake_dimensions["contact_sqm"]*self.labour_time["plastering"]*self.labour_cost["skill_worker"]
             mas_labour=(self.intake_dimensions["structure_vol"] * self.labour_time["bricklaying"]) * self.labour_cost["skill_worker"]
-            self.intake_cost["structure labour"] = surface_labour+mas_labour
+            hauling_cost=((self.intake_dimensions["structure_vol"]*2300)/50)*2*self.labour_cost["hauling_cost"]
+            self.intake_cost["structure labour"] = surface_labour+mas_labour+hauling_cost
 

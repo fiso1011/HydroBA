@@ -37,13 +37,12 @@ class Channel:
                                                             0.5 * np.tan(np.deg2rad(self.site_data["terrain_slope"])))
         structure_vol=self.channel_data["channel length"]*(excavation_width*foundation_thickness+2*channel_height*self.channel_data["wall thickness"])
         gravel_sqm=self.channel_data["channel length"]*excavation_width*0.1
-        contact_sqm=channel_height*1.3*3*self.channel_data["channel length"]
+        contact_sqm=channel_width*(1.3*2+1)*self.channel_data["channel length"]
 
         self.channel_dimensions["excavation_vol"] = excavation_vol
         self.channel_dimensions["structure_vol"] = structure_vol
         self.channel_dimensions["gravel_sqm"]=gravel_sqm
         self.channel_dimensions["vlies_sqm"]= self.channel_data["channel length"]*(excavation_width+excavation_height+foundation_thickness)
-        self.channel_dimensions["wet_surface"]=self.channel_data["channel length"]*channel_width*(1+2*1.3)
         self.channel_dimensions["contact_sqm"]=contact_sqm
 
     def calculate_channel_material(self):
@@ -53,6 +52,7 @@ class Channel:
         elif self.channel_material["structural material"]=="MAS":
             channel_mas=c_rm.Raw_Material(self.channel_dimensions,self.raw_material)
             raw_mat_price=channel_mas.calculate_masonry()
+            self.channel_dimensions["structure_vol"] = self.channel_dimensions["structure_vol"] + self.channel_dimensions["contact_sqm"] * 0.02  # cement finish vol for masonry walls
         self.channel_cost["raw material"] = raw_mat_price
         drainage_vlies=self.channel_dimensions["vlies_sqm"]*self.channel_material["drainage vlies"]
         drainage_pipe=self.channel_material["drainage pipe"]*(self.channel_data["channel length"]/10)
@@ -66,9 +66,11 @@ class Channel:
         if self.channel_material["structural material"] =="RCC":
             formwork_labour = self.channel_dimensions["contact_sqm"] * self.labour_time["formwork"] * self.labour_cost["skill_worker"]
             concreting_labour = (self.channel_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
-            self.channel_cost["structure labour"] = formwork_labour + concreting_labour
+            hauling_cost = (((self.channel_dimensions["structure_vol"]+self.channel_dimensions["gravel_sqm"]*0.1) * 2300) / 50) * 2 * self.labour_cost["hauling_cost"]
+            self.channel_cost["structure labour"] = formwork_labour + concreting_labour+hauling_cost
         elif self.channel_material["structural material"] =="MAS":
-            surface_labour=self.channel_dimensions["wet_surface"] * self.labour_time["plastering"] * self.labour_cost["skill_worker"]#cement finish
+            surface_labour=self.channel_dimensions["contact_sqm"] * self.labour_time["plastering"] * self.labour_cost["skill_worker"]#cement finish
             mas_labour=(self.channel_dimensions["structure_vol"] * self.labour_time["bricklaying"]) * self.labour_cost["skill_worker"]
-            self.channel_cost["structure labour"] = surface_labour+mas_labour
+            hauling_cost = (((self.channel_dimensions["structure_vol"]+self.channel_dimensions["gravel_sqm"]*0.1+self.channel_dimensions["contact_sqm"]*0.02) * 2300) / 50) * 2 * self.labour_cost["hauling_cost"]
+            self.channel_cost["structure labour"] = surface_labour+mas_labour+hauling_cost
 

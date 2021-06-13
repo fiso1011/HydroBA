@@ -3,8 +3,9 @@ import RawMaterial as c_rm
 
 class Penstock:
     def __init__(self,input_data):
-        self.penstock_data=input_data.input_dict["penstock_data"] ["dict"]
+        self.penstock_data=input_data.input_dict["penstock_data"]["dict"]
         self.penstock_material=input_data.input_dict["penstock_material"]["dict"]
+        self.channel_material=input_data.input_dict["channel_material"]["dict"]
         self.total_penstock_cost
         #import relevant Dicts
         self.site_data = input_data.input_dict["site_data"]["dict"]
@@ -47,27 +48,25 @@ class Penstock:
         self.penstock_cost["raw material"] = raw_mat_price
 
         gravel=self.penstock_dimensions["gravel_sqm"]*0.1*self.raw_material["gravel"]
+        vlies=self.penstock_dimensions["gravel_sqm"]*self.channel_material["drainage vlies"]
         mounting_bracket=self.penstock_material["mounting bracket"]*((self.penstock_data["penstock length"])/10)
         #calculate pipe cost for both penstock and spillway pipe
-        if self.penstock_material["structural material"] == "PVC":
-            pipe1_cost=((self.penstock_data["height drop"]/10)*50+di_penstock*50)*self.penstock_data["penstock length"] #to be changed later, only pipe
-            joint1_cost=(self.penstock_data["penstock length"]/10)*di_penstock*50 #to be changed later
+        if self.penstock_material["penstock material"] == "PVC":
+            pipe1_cost= 0.00005*((self.penstock_data["height drop"]*1.5)/10)*np.power((di_penstock*1000),1.98)*self.penstock_data["penstock length"]# only pipe
+            joint1_cost=0.0045*np.power((di_penstock*1000),1.98)*(self.penstock_data["penstock length"]/10)
             bolts1_cost=(pipe1_cost+joint1_cost)*0.1
-            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*\
-                         self.penstock_data["penstock length"] # to be changed later, only pipe
-            joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
+            pipe2_cost = 0.00005*((self.penstock_data["height drop"]*1.5)/10)*np.power((self.penstock_data["di_spillway"]*1000),1.98)*self.penstock_data["penstock length"]
+            joint2_cost = 0.0045*np.power((self.penstock_data["di_spillway"]*1000),1.98)*(self.penstock_data["penstock length"]/10)
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
-        elif self.penstock_material["structural material"] == "HDPE":
-            pipe1_cost = ((self.penstock_data["height drop"] / 10) * 50 + di_penstock * 50)*self.penstock_data["penstock length"]  # to be changed later, only pipe
-            joint1_cost = (self.penstock_data["penstock length"] / 10) * di_penstock * 50  # to be changed later
+        elif self.penstock_material["penstock material"] == "HDPE":
+            pipe1_cost = (0.00004*((self.penstock_data["height drop"]*1.5)/10)+0.00008)*np.power((di_penstock*1000),1.99)  # only pipe
+            joint1_cost = 0.0018*np.power((di_penstock*1000),2.18)
             bolts1_cost = (pipe1_cost + joint1_cost) * 0.1
-            pipe2_cost = ((self.penstock_data["height drop"] / 10) * 50 + self.penstock_data["di_spillway"] * 50)*\
-                         self.penstock_data["penstock length"] # to be changed later, only pipe
-            joint2_cost = (self.penstock_data["penstock length"] / 10) * self.penstock_data["di_spillway"] * 50  # to be changed later
+            pipe2_cost = (0.00004*((self.penstock_data["height drop"]*1.5)/10)+0.00008)*np.power((self.penstock_data["di_spillway"]*1000),1.99)
+            joint2_cost = 0.0018*np.power((self.penstock_data["di_spillway"]*1000),2.18)
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.1
         pipes_total_cost=pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost
-        self.penstock_cost["material"]= gravel+mounting_bracket+pipes_total_cost
-
+        self.penstock_cost["material"]= gravel+vlies+mounting_bracket+pipes_total_cost
         #HDPE und PVC vlt nur durch Faktor unterscheiden bei den Kosten??
     def calculate_penstock_labour(self):
         self.penstock_cost["excavation labour"] = (self.penstock_dimensions["excavation_vol"] *\
@@ -75,5 +74,6 @@ class Penstock:
         self.penstock_cost["laying"] = (self.penstock_dimensions["gravel_sqm"])*3*self.labour_time["laying"]*self.labour_cost["noskill_worker"]#gravel
         formwork_labour = self.penstock_dimensions["contact_sqm"] * self.labour_time["formwork"] * self.labour_cost["skill_worker"]
         concreting_labour = (self.penstock_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
-        self.penstock_cost["structure labour"] = formwork_labour + concreting_labour
-        self.penstock_cost["installation labour"] = (self.penstock_data["penstock length"] / 10)*50 #change later
+        hauling_cost = (((self.penstock_dimensions["structure_vol"] + self.penstock_dimensions["gravel_sqm"] * 0.1) * 2300) / 50) * 2 * self.labour_cost["hauling_cost"]
+        self.penstock_cost["structure labour"] = formwork_labour + concreting_labour+hauling_cost
+        self.penstock_cost["installation labour"] = (self.penstock_data["penstock length"] / 10)*4*(self.labour_cost["skill_worker"]+self.labour_cost["noskill_worker"]) #8 hours per 10m pipe
