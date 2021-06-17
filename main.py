@@ -4,6 +4,8 @@ import Channel as c_ch
 import Sandtrap as c_st
 import Penstock as c_ps
 import Powerhouse as c_ph
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Read input files from DataInput Class
 input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input.xlsm'
@@ -12,157 +14,198 @@ input_data = c_di.data_input(input_data_path)  # class with all dicts from Excel
 # Calculate cost for each division
 Intake = c_in.Intake(input_data)
 Intake.total_intake_cost()
-print("total intake cost")
-print(Intake.total_intake_cost)  # total cost of Intake, detailed cost is stored in dict intake_cost
-
 Channel = c_ch.Channel(input_data)
 Channel.total_channel_cost()
-print("total channel cost")
-print(Channel.total_channel_cost)  # total cost of Channel, detailed cost is stored in dict
-
 Sandtrap = c_st.Sandtrap(input_data)
 Sandtrap.total_sandtrap_cost()
-print("total sandtrap cost")
-print(Sandtrap.total_sandtrap_cost)  # total cost of Sandtrap, detailed cost is stored in dict
-
 Penstock = c_ps.Penstock(input_data)
 Penstock.total_penstock_cost()
-print("total penstock cost")
-print(Penstock.total_penstock_cost)  # total cost of Penstock, detailed cost is stored in dict
-
 Powerhouse = c_ph.Powerhouse(input_data)
 Powerhouse.total_powerhouse_cost()
-print("powerhouse cost")
-print(Powerhouse.total_powerhouse_cost-Powerhouse.powerhouse_storage["turbine_cost"])  # total cost of Powerhouse, detailed cost is stored in dict
-print("turbine cost")
-print(Powerhouse.powerhouse_storage["turbine_cost"])
+cumulated_divisions_0=Intake.total_intake_cost+Channel.total_channel_cost+Sandtrap.total_sandtrap_cost+\
+                        Penstock.total_penstock_cost+Powerhouse.total_powerhouse_cost
 
 # Import dicts for country specific cost calculation
 country_data = input_data.input_dict["country_data"]["dict"]
 site_data = input_data.input_dict["site_data"]["dict"]
 labour_cost = input_data.input_dict["labour_cost"]["dict"]
+constants=input_data.input_dict["constants"]["dict"]
+raw_material=input_data.input_dict["raw_material"]["dict"]
 
-# Calculate Miscellaneous cost for building structure (tools etc)
+# Calculate Miscellaneous cost
 structure_misc_cost = (Intake.intake_cost["raw material"] + Channel.channel_cost["raw material"] +
                        Sandtrap.sandtrap_cost["raw material"] + Penstock.penstock_cost["raw material"] +\
-                       Powerhouse.powerhouse_cost["raw material"]) * 0.05  # 5% material for total masonry or concrete
-
-# Calculate Miscellaneous cost of tools&material for installations of electrics
-installation_misc_cost = Powerhouse.powerhouse_cost["material"] * 0.05  # 5% material and tools
-print("misc material cost")
-print(structure_misc_cost + installation_misc_cost)
+                       Powerhouse.powerhouse_cost["raw material"]) * 0.015  # 1,5% for tools etc.
+installation_misc_cost = (Penstock.penstock_cost["material"]+Powerhouse.powerhouse_cost["material"]) * 0.015
 
 # calculate import cost
-import_cost = (Powerhouse.powerhouse_storage["turbine_cost"] + Powerhouse.powerhouse_storage[
-    "electric_equipment_cost"]) * country_data["import tax"]
+turbine_import_cost = Powerhouse.powerhouse_storage["turbine_cost"] * country_data["import tax"]
+electrics_import_cost=Powerhouse.powerhouse_storage["electric_equipment_cost"]* country_data["import tax"]
+pipe_import_cost=(Penstock.penstock_storage["penstock pipe total"]+Powerhouse.powerhouse_storage["tailrace total cost"])*\
+                 country_data["import tax"]
+total_import_cost=turbine_import_cost+electrics_import_cost+pipe_import_cost
 
-# calculate delivery to site (international port: turbine, pipes)
-flight_cost = 5500  # 1000kg turbine (gibt es hier Unterschiede zwischen Typen? Gewicht als Input?
+# calculate turbine transport cost without road factor
+turbine_flight_cost = 4000  # 750kg turbine (gibt es hier Unterschiede zwischen Typen? Gewicht als Input?
+turbine_transport_0 = labour_cost["truck_cost"] * country_data["int_port_distance"] * 1  # imported turbine 1 ton
 
-# calculate delivery cost of 1 truckload to building site of goods that arrive in international port/airport:1 way from international port
-turbine_transport_cost0 = country_data["truck_cost"] * country_data["int_port_distance"] * 1  # imported turbine 1 ton
-
-# calculate total pipe volume to be transported
-pipes_transport_volume = (Penstock.penstock_storage["pipe volume"] + Powerhouse.powerhouse_storage["pipe volume"])  # 0,66
-if (pipes_transport_volume / 0.8) < 35:
-    pipe_transport_cost0 = country_data["truck_cost"] * country_data["int_port_distance"] * 1
+# calculate pipe transport cost without road factor
+pipes_transport_volume = (Penstock.penstock_storage["pipe volume"] + Powerhouse.powerhouse_storage["pipe volume"])
+if (pipes_transport_volume*2) < 35:
+    pipe_transport_0 = labour_cost["truck_cost"] * country_data["int_port_distance"] * 1
 else:
-    pipe_transport_cost0 = country_data["truck_cost"] * country_data["int_port_distance"] * (pipes_transport_volume / (35 * 0.8))  # 80% of Volume used
+    pipe_transport_0 = labour_cost["truck_cost"] * country_data["int_port_distance"] * (pipes_transport_volume*2 / (35))
 
-# calculate total volume building material, estimate total weight
-material_transport_vol = Intake.intake_dimensions["structure_vol"] + Channel.channel_dimensions["structure_vol"] + \
-                         Sandtrap.sandtrap_dimensions["structure_vol"] + Penstock.penstock_dimensions["structure_vol"] + \
-                         Powerhouse.powerhouse_dimensions["structure_vol"]
-gravel_transport_vol = (Channel.channel_dimensions["gravel_sqm"] + Sandtrap.sandtrap_dimensions["gravel_sqm"] +
-                        Penstock.penstock_dimensions["gravel_sqm"] + Powerhouse.powerhouse_dimensions[
-                            "gravel_sqm"]) * 0.1
-structure_transport_weight = (material_transport_vol * 2300 + gravel_transport_vol * 1500) / 1000  # estimated density
+# calculate the transport cost for building material from next city without road factor
+p_s=(constants["p_structure"]/1000)
+p_g=(constants["p_gravel"]/1000)
+g_t=raw_material["gravel_thickness"]
+intake_transport_weight = Intake.intake_dimensions["structure_vol"]*p_s
+channel_transport_weight=Channel.channel_dimensions["structure_vol"]*p_s+Channel.channel_dimensions["gravel_sqm"]*p_g*g_t
+sandtrap_transport_weight=Sandtrap.sandtrap_dimensions["structure_vol"]*p_s+Sandtrap.sandtrap_dimensions["gravel_sqm"]*p_g*g_t
+penstock_transport_weight=Penstock.penstock_dimensions["structure_vol"]*p_s+Penstock.penstock_dimensions["gravel_sqm"]*p_g*g_t
+powerhouse_transport_weight=Powerhouse.powerhouse_dimensions["structure_vol"]*p_s+Powerhouse.powerhouse_dimensions["gravel_sqm"]*p_g*g_t
+#total structure weight and material transport cost without road factor
+structure_transport_weight = (intake_transport_weight+channel_transport_weight+sandtrap_transport_weight+\
+                              penstock_transport_weight+powerhouse_transport_weight)  # estimated density
+mat_transport_0 = labour_cost["ton_km_cost"] * structure_transport_weight * country_data["nat_port_distance"]
 
-# calculate the total transport cost for building material from next city
-nat_transport_cost0 = country_data["ton_km_cost"] * structure_transport_weight * country_data["nat_port_distance"]
-
+#calculate total transport cost with road factor
 if country_data["road_condition"]=="paved":
-    transport_cost_1=(turbine_transport_cost0+pipe_transport_cost0+nat_transport_cost0)*1
+    turbine_transport=turbine_transport_0*1
+    pipe_transport=pipe_transport_0*1
+    mat_transport=mat_transport_0*1
 elif country_data["road_condition"]=="gravel":
-    transport_cost_1 = (turbine_transport_cost0 + pipe_transport_cost0 + nat_transport_cost0) * 1.5
+    turbine_transport = turbine_transport_0 * 1.5
+    pipe_transport = pipe_transport_0 * 1.5
+    mat_transport = mat_transport_0 * 1.5
 elif country_data["road_condition"] == "paved":
-    transport_cost_1 = (turbine_transport_cost0 + pipe_transport_cost0 + nat_transport_cost0) * 2.5
-total_import_transport = import_cost + flight_cost + transport_cost_1
-print("import and transport cost")
-print(total_import_transport)
+    turbine_transport = turbine_transport_0 * 2.5
+    pipe_transport = pipe_transport_0 * 2.5
+    mat_transport = mat_transport_0 * 2.5
+total_import_transport=turbine_flight_cost+total_import_cost+pipe_transport+turbine_transport+mat_transport
+
 #total powerplant cost
-powerplant_cumulated_cost=Intake.total_intake_cost+Channel.total_channel_cost+Sandtrap.total_sandtrap_cost+Penstock.total_penstock_cost+ \
-                      Powerhouse.total_powerhouse_cost+structure_misc_cost+installation_misc_cost+total_import_transport
-planning_cost=powerplant_cumulated_cost*0.08
-total_powerplant_cost=powerplant_cumulated_cost+planning_cost
-print("Total Powerplant Cost")
-print(total_powerplant_cost)
+cumulated_divisions_cost=cumulated_divisions_0+structure_misc_cost+installation_misc_cost+total_import_transport
+planning_cost=cumulated_divisions_cost*0.08
+cumulated_powerplant_cost=cumulated_divisions_cost+planning_cost
 
 # calculate risk on top for each division
-intake_mat_risk=Intake.intake_storage["material"]*0.1
-channel_mat_risk=Channel.channel_storage["material"]*0.1
-sandtrap_mat_risk=Sandtrap.sandtrap_storage["material"]*0.1
-penstock_mat_risk=Penstock.penstock_storage["material"]*0.1
-powerhouse_mat_risk=(Powerhouse.powerhouse_storage["material"]-Powerhouse.powerhouse_storage["turbine total"]-\
-                     Powerhouse.powerhouse_storage["electric_equipment_cost"])*0.1
-turbine_mat_risk=Powerhouse.powerhouse_storage["turbine total"]*0.1
-electric_mat_risk=Powerhouse.powerhouse_storage["electric_equipment_cost"]*0.1
-powerhouse_total_mat_risk=turbine_mat_risk+electric_mat_risk+powerhouse_mat_risk
-total_rawmaterial_risk=intake_mat_risk+channel_mat_risk+sandtrap_mat_risk+penstock_mat_risk+powerhouse_total_mat_risk
+intake_risk=(Intake.intake_storage["material"]+Intake.intake_storage["labour"])*0.1
+channel_risk=(Channel.channel_storage["material"]+Channel.channel_storage["labour"])*0.2 #geo obstacles
+sandtrap_risk=(Sandtrap.sandtrap_storage["material"]+Sandtrap.sandtrap_storage["labour"])*0.2 #complex geometry
+penstock_risk=(Penstock.penstock_storage["material"]+Penstock.penstock_storage["labour"])*0.1
+pipe_risk=Penstock.penstock_storage["penstock pipe total"]*0.1
+powerhouse_risk=(Powerhouse.powerhouse_storage["powerhouse_cost"]+Powerhouse.powerhouse_storage["labour"])*0.1
+turbine_risk=Powerhouse.powerhouse_storage["turbine_cost"]*0.1
+electric_risk=Powerhouse.powerhouse_storage["electric_equipment_cost"]*0.1
+powerhouse_total_risk=turbine_risk+electric_risk+powerhouse_risk
 
+misc_risk=(installation_misc_cost+structure_misc_cost)*0.2
+planning_risk=planning_cost*0.1
 
-intake_labour_risk=Intake.intake_storage["labour"]*0.1
-channel_labour_risk=Channel.channel_storage["labour"]*0.1
-sandtrap_labour_risk=Sandtrap.sandtrap_storage["labour"]*0.1
-penstock_labour_risk=Penstock.penstock_storage["labour"]*0.1
-powerhouse_labour_risk=Powerhouse.powerhouse_storage["labour"]*0.1
-total_labour_risk=intake_labour_risk+channel_labour_risk+sandtrap_labour_risk+penstock_labour_risk+powerhouse_labour_risk
+turbine_transport_risk=(turbine_flight_cost+turbine_transport)*0.25
+pipe_transport_risk=pipe_transport*0.25
+mat_transport_risk=mat_transport*0.1
 
-misc_risk=(installation_misc_cost+structure_misc_cost)*0.3
-transport_risk=(transport_cost_1+flight_cost)*0.25
-currency_risk=(Powerhouse.powerhouse_cost["material"]+Penstock.penstock_cost["material"])*0.05
+pipe_currency_risk=(Penstock.penstock_storage["penstock pipe total"]+Powerhouse.powerhouse_storage["tailrace total cost"])*0.05
+turbine_currency_risk=Powerhouse.powerhouse_storage["turbine_cost"]*0.05
+electrics_currency_risk=Powerhouse.powerhouse_storage["electric_equipment_cost"]*0.05
 
-#total risk
-total_risk=total_rawmaterial_risk+total_labour_risk+misc_risk+transport_risk+currency_risk
+#Split material transport cost on each division
+intake_transport=(mat_transport+mat_transport_risk)*(intake_transport_weight/structure_transport_weight)
+channel_transport=(mat_transport+mat_transport_risk)*(channel_transport_weight/structure_transport_weight)
+sandtrap_transport=(mat_transport+mat_transport_risk)*(sandtrap_transport_weight/structure_transport_weight)
+penstock_transport=(mat_transport+mat_transport_risk)*(penstock_transport_weight/structure_transport_weight)
+powerhouse_transport=(mat_transport+mat_transport_risk)*(powerhouse_transport_weight/structure_transport_weight)
+
+pipe_transport_cost=pipe_transport+pipe_transport_risk
+turbine_transport_cost=turbine_transport+turbine_transport_risk+turbine_flight_cost
 
 # total investing cost
-total_investing_cost=total_powerplant_cost+total_risk # single risk factors
+intake_invest=Intake.total_intake_cost+intake_risk+intake_transport
+channel_invest=Channel.total_channel_cost+channel_risk+channel_transport
+sandtrap_invest=Sandtrap.total_sandtrap_cost+sandtrap_risk+sandtrap_transport
+penstock_invest=Penstock.total_penstock_cost+pipe_import_cost+penstock_transport+pipe_transport_cost+\
+                pipe_transport_risk+penstock_risk+pipe_risk+pipe_currency_risk
+powerhouse_invest=Powerhouse.powerhouse_storage["powerhouse_cost"]+powerhouse_transport+powerhouse_risk
+turbine_invest=Powerhouse.powerhouse_storage["turbine_cost"]+turbine_flight_cost+turbine_import_cost+\
+               turbine_transport_cost+turbine_risk+turbine_transport_risk+turbine_currency_risk
+electrics_invest=Powerhouse.powerhouse_storage["electric_equipment_cost"]+electric_risk+electrics_import_cost+\
+                 electrics_currency_risk
+misc_invest=structure_misc_cost+installation_misc_cost+misc_risk
+planning_invest=planning_cost+planning_risk
+
+total_investing_cost=intake_invest+channel_invest+sandtrap_invest+penstock_invest+powerhouse_invest+\
+                     turbine_invest+electrics_invest+planning_invest+misc_invest
+print("Intake")
+print(intake_invest)
+print("Channel")
+print(channel_invest)
+print("Sandtrap")
+print(sandtrap_invest)
+print("Penstock")
+print(penstock_invest)
+print("Powerhouse")
+print(powerhouse_invest)
+print("Turbine")
+print(turbine_invest)
+print("Electrics")
+print(electrics_invest)
+print("Planning")
+print(planning_invest)
+print("Miscellaneous")
+print(misc_invest)
 print("Total Investment")
 print(total_investing_cost)
 
 # calculate running cost abbreviation
-# Intake+Channel+Sandtrap:50 years
-waterway_risk=intake_mat_risk+intake_labour_risk+channel_mat_risk+channel_labour_risk+sandtrap_mat_risk+sandtrap_labour_risk
-waterway_depreciation = (Intake.total_intake_cost + Channel.total_channel_cost + Sandtrap.total_sandtrap_cost+waterway_risk) / 50
-# Penstock:30
-penstock_depreciation = (Penstock.total_penstock_cost+penstock_mat_risk+penstock_labour_risk) / 40
-# Powerhouse,TG-Gruppe:30
-turbine_depreciation = (Powerhouse.powerhouse_storage["turbine_cost"]+turbine_mat_risk) / 30
-# Regler,electrical:20
-electrical_depreciation = (Powerhouse.powerhouse_storage["electric_equipment_cost"]+electric_mat_risk)/20
-#Powerhouse: 40 (roof, tailrace average)
-powerhouse_depreciation=(Powerhouse.powerhouse_storage["material"]-Powerhouse.powerhouse_storage["turbine total"]-\
-                         Powerhouse.powerhouse_storage["electric_equipment_cost"]+powerhouse_mat_risk+powerhouse_labour_risk)/40
+waterway_depreciation = (intake_invest+channel_invest+sandtrap_invest) / 50
+penstock_depreciation = (penstock_invest) / 40
+rest_depreciation=(misc_risk+planning_invest)/20
+
+if site_data["turbine_abrasion"]=="high":
+    turbine_depreciation = (turbine_invest) / 30
+elif site_data["turbine_abrasion"]=="normal":
+    turbine_depreciation = (turbine_invest) / 45
+elif site_data["turbine_abrasion"] == "normal":
+    turbine_depreciation = (turbine_invest) / 60
+electrical_depreciation = (electrics_invest)/20
+powerhouse_depreciation=(powerhouse_invest)/40
 powerhouse_total_depreciation=turbine_depreciation+electrical_depreciation+powerhouse_depreciation
-#remaining depreciation
-remaining_depreciation=(misc_risk+transport_risk+currency_risk)/30
+
 # calculate running cost labour & material
 om_annual_cost=total_investing_cost*0.03
 # calculate total annual cost
-total_annual_cost=waterway_depreciation+penstock_depreciation+turbine_depreciation+electrical_depreciation+powerhouse_depreciation+remaining_depreciation+om_annual_cost
+total_annual_cost=waterway_depreciation+penstock_depreciation+powerhouse_total_depreciation+\
+                  rest_depreciation+om_annual_cost
 print("total annual cost")
 print(total_annual_cost)
 
 #plant hours uptime
-plant_hours=365*(5/7)*24*(12/24)*0.9 #5 work days, 12h working hours, 90% uptime
-total_kwh=site_data["power"]*0.5*plant_hours #50% average of used flow
+plant_hours=365*(6/7)*24*(12/24)*0.9 #5 work days, 12h working hours, 90% uptime
+total_kwh=site_data["power"]*0.6*plant_hours #60% average of used flow
 print("total kwh")
 print(total_kwh)
-
+#print average cost per kWh
+print("USD/kwh")
 print(total_annual_cost/total_kwh)
+print("Turbine percent")
+print(turbine_invest/total_investing_cost)
+print(Powerhouse.powerhouse_storage["turbine_cost"])
+
 # wirtschaftlichkeit rechnung, annuitäten...
-
-# plant hours uptime
-
-#Unsicherheiten, Höhe Volumen Variation
 #Sensitivitäten
+
+x=np.array(["Wasserbau","Fallrohr","Maschinenhaus","Turbine","Elektrik","Planung&Sonstiges"])
+y=np.array([(intake_invest+channel_invest+sandtrap_invest),penstock_invest,powerhouse_invest,\
+            turbine_invest,electrics_invest,(planning_invest+misc_invest)])
+
+plt.bar(x,y)
+plt.grid()
+xpoints = np.array([2, 3])
+ypoints = np.array([10000, 10000])
+
+plt.plot(xpoints, ypoints, 'o')
+plt.show()
+

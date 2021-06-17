@@ -36,9 +36,9 @@ class Raw_Material:
 
     def calculate_masonry(self):
         mas_vol=self.dimensions["structure_vol"]
-        brick_vol=mas_vol*0.95 #95% bricks, 5% cc (80%sand, 20% cement)
-        cement_weight=mas_vol*0.05*0.2*self.constants["p_cement"]
-        sand_vol=mas_vol*0.05*0.8
+        brick_vol=mas_vol*0.8 #80% bricks, 20% cc (80%sand, 20% cement)
+        cement_weight=mas_vol*0.2*0.2*self.constants["p_cement"]
+        sand_vol=mas_vol*0.2*0.8
         surface_cement_weight=self.dimensions["contact_sqm"]*self.raw_material["surface_finish"]*self.constants["p_cement"]
 
         brick_price=brick_vol*self.raw_material["bricks"]

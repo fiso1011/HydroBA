@@ -12,9 +12,11 @@ class Channel:
         self.labour_time = input_data.input_dict["labour_time"]["dict"]
         self.raw_material = input_data.input_dict["raw_material"]["dict"]
         self.constants = input_data.input_dict["constants"]["dict"]
+
         # Dict to store Dimensions
         self.channel_dimensions= {}
         self.channel_storage = {}
+
         #Dict to store the Material cost, the labour cost miscellaneous
         self.channel_cost={}
 
@@ -24,6 +26,7 @@ class Channel:
         self.calculate_channel_material()
         self.calculate_channel_labour()
         self.total_channel_cost=sum(self.channel_cost.values())
+
     def calculate_channel_dimensions(self):
         channel_width=(self.site_data["used_flow"]/(self.channel_data["channel roughness"]*0.48*\
                                                     np.power(self.channel_data["channel slope"],0.5)))**(3/8)
@@ -31,6 +34,7 @@ class Channel:
         excavation_height=excavation_width*np.tan(self.site_data["terrain_slope"])
         channel_height=channel_width*self.channel_data["security height"]
 
+        #determine the height of the base of the basin to match wall heights
         if excavation_height > channel_height:
             foundation_thickness=self.channel_data["foundation thickness"]+excavation_height-channel_height
         else:
@@ -46,8 +50,12 @@ class Channel:
         self.channel_dimensions["gravel_sqm"]=gravel_sqm
         self.channel_dimensions["vlies_sqm"]= self.channel_data["channel length"]*(excavation_width+excavation_height+foundation_thickness)
         self.channel_dimensions["contact_sqm"]=contact_sqm
+        self.channel_dimensions["excavation_width"] = excavation_width
+        self.channel_dimensions["channel_height"]=channel_height
+
 
     def calculate_channel_material(self):
+        # calculate structure material price
         if self.channel_material["structural material"]=="RCC":
             channel_rcc =c_rm.Raw_Material(self.channel_dimensions,self.raw_material,self.constants)
             raw_mat_price=channel_rcc.calculate_rcc()
@@ -57,8 +65,10 @@ class Channel:
             self.channel_dimensions["structure_vol"] = self.channel_dimensions["structure_vol"] +\
                                                        self.channel_dimensions["contact_sqm"] * self.raw_material["surface_finish"]  # cement finish vol for masonry walls
         self.channel_cost["raw material"] = raw_mat_price
+
         drainage_vlies=self.channel_dimensions["vlies_sqm"]*self.channel_material["drainage vlies"]
-        drainage_pipe=self.channel_material["drainage pipe"]*(self.channel_data["channel length"]/10)
+        drainage_pipe=self.channel_material["drainage pipe"]*(self.channel_data["channel length"]/10)*\
+                      (2*1.3*self.channel_dimensions["excavation_width"])
         gravel=self.channel_dimensions["gravel_sqm"]*self.raw_material["gravel_thickness"]*self.raw_material["gravel"]
         self.channel_cost["material"]= drainage_pipe+drainage_vlies+gravel
 
@@ -66,6 +76,8 @@ class Channel:
         self.channel_cost["excavation labour"] = (self.channel_dimensions["excavation_vol"] *\
                                                   (1.1123*np.exp(0.4774*self.site_data["excavating_factor"]))) * self.labour_cost["noskill_worker"]
         self.channel_cost["laying"] = (self.channel_dimensions["gravel_sqm"])*3*self.labour_time["laying"]*self.labour_cost["noskill_worker"] #gravel,vlies und rohr
+
+        # calculate structure material work
         if self.channel_material["structural material"] =="RCC":
             formwork_labour = self.channel_dimensions["contact_sqm"] * self.labour_time["formwork"] * self.labour_cost["skill_worker"]
             concreting_labour = (self.channel_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]

@@ -6,15 +6,18 @@ class Intake:
         self.intake_data=input_data.input_dict["intake_data"] ["dict"]
         self.intake_material=input_data.input_dict["intake_material"]["dict"]
         self.total_intake_cost
+
         #import relevant Dicts
         self.site_data = input_data.input_dict["site_data"]["dict"]
         self.labour_cost = input_data.input_dict["labour_cost"]["dict"]
         self.labour_time = input_data.input_dict["labour_time"]["dict"]
         self.raw_material=input_data.input_dict["raw_material"]["dict"]
         self.constants=input_data.input_dict["constants"]["dict"]
+
         # Dict to store Dimensions
         self.intake_dimensions= {}
         self.intake_storage = {}
+
         #Dict to store the Material cost, the labour cost miscellaneous
         self.intake_cost={}
 
@@ -24,17 +27,19 @@ class Intake:
         self.calculate_intake_material()
         self.calculate_intake_labour()
         self.total_intake_cost=sum(self.intake_cost.values())
+
+
     def calculate_intake_dimensions(self):
         q_worst=self.site_data["maximum_flow"]*20   #Assumption in Micro Hydro Design manual
         weir_over_height = ((1/((2/3)*np.sqrt(2*self.constants["gravitation"])))*q_worst)/\
-                           (self.intake_data ['weir coefficient']*self.intake_data["river length"])       #weir formula of Poleni
+                           (self.intake_data ['weir coefficient']*self.intake_data["river width"]) #weir formula Poleni
 
-        wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['river length']*self.intake_data['wall thickness']
-        weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['river length']
+        wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['river width']*self.intake_data['wall thickness']
+        weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['river width']
         foundation_vol=(self.intake_data['weir height']+self.intake_data['wall thickness'])*\
-                       (self.intake_data['foundation thickness']*self.intake_data['river length'])
+                       (self.intake_data['foundation thickness']*self.intake_data['river width'])
         intake_vol=wall_vol+weir_vol
-        contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['river length']*2
+        contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['river width']*2
 
         self.intake_dimensions["intake_vol"] = intake_vol
         self.intake_dimensions["foundation_vol"]= foundation_vol
@@ -43,6 +48,7 @@ class Intake:
 
 
     def calculate_intake_material(self):
+        # calculate structure material material
         if self.intake_material["structural material"]=="RCC":
             intake_rcc =c_rm.Raw_Material(self.intake_dimensions,self.raw_material,self.constants)
             raw_mat_price=intake_rcc.calculate_rcc()
@@ -58,6 +64,8 @@ class Intake:
     def calculate_intake_labour(self):
         self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] *\
                                                 (1.1123*np.exp(0.4774*self.site_data["excavating_factor"])) * self.labour_cost["noskill_worker"]
+
+        # calculate structure material work
         if self.intake_material["structural material"] =="RCC":
             formwork_labour=self.intake_dimensions["contact_sqm"]*self.labour_time["formwork"]*self.labour_cost["skill_worker"]
             concreting_labour= (self.intake_dimensions["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
