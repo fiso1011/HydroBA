@@ -86,10 +86,6 @@ class Powerhouse:
             turbine_cost = (1358677.67 * np.power(self.penstock_data["height drop"], 0.014) + 8489.85 *\
                             np.power((self.site_data["used_flow"] * 1000), 0.515) +\
                             3382.1 * np.power(self.site_data["power"], 0.416) - 1479160.63)*1.05*self.usd_conversion["eur_usd"]
-        elif self.powerhouse_material["turbine type"] == "CR":
-            turbine_cost = (139318.161 * np.power(self.penstock_data["height drop"], 0.02156) + 0.06372 *\
-                            np.power((self.site_data["used_flow"] * 1000), 1.45636) +\
-                            155227.37 * np.power(self.site_data["power"], 0.11053) - 302038.27)*1.05*self.usd_conversion["eur_usd"]
 
         lightning_protection = self.powerhouse_material["lightning protection"]
         electrics_fix = self.powerhouse_material["electrics fix"]
@@ -119,8 +115,8 @@ class Powerhouse:
         building_installation = 8 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # 16h: roof, lightning protection
         tailrace_installation = (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"]) * 4 *\
                                 (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # to be edited later
-        turbine_installation = 16 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # 32h
-        electrical_installation = 8 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # 16h switch cabinet
+        turbine_installation = 100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
+        electrical_installation = 100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
 
         hauling_cost = (((self.help1["structure_vol"] + self.help2["structure_vol"] + self.powerhouse_dimensions["gravel_sqm"] *\
                           self.raw_material["gravel_thickness"] + self.help2["contact_sqm"] * self.raw_material["surface_finish"])*\
@@ -132,3 +128,6 @@ class Powerhouse:
         self.powerhouse_storage["material"] = self.powerhouse_cost["raw material"] + self.powerhouse_cost["material"]
         self.powerhouse_storage["labour"] = self.powerhouse_cost["excavation labour"] + self.powerhouse_cost["structure labour"] +\
                                             self.powerhouse_cost["laying"]+self.powerhouse_cost["installation labour"]
+        self.powerhouse_storage["turbine install"]=turbine_installation
+        self.powerhouse_storage["electrics install"]=electrical_installation
+        self.powerhouse_storage["powerhouse install"]=tailrace_installation+building_installation
