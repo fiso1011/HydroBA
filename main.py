@@ -128,10 +128,10 @@ pipe_transport_cost=pipe_transport+pipe_transport_risk
 turbine_transport_cost=turbine_transport+turbine_transport_risk+turbine_flight_cost
 
 # total investing cost
-intake_invest=Intake.total_intake_cost++intake_transport+intake_risk
-channel_invest=Channel.total_channel_cost++channel_transport+channel_risk
-sandtrap_invest=Sandtrap.total_sandtrap_cost++sandtrap_transport+sandtrap_risk
-penstock_invest=Penstock.total_penstock_cost+pipe_import_cost+penstock_transport+pipe_transport_cost+pipe_transport_risk+penstock_risk+pipe_risk+pipe_currency_risk
+intake_invest=Intake.total_intake_cost+intake_transport+intake_risk
+channel_invest=Channel.total_channel_cost+channel_transport+channel_risk
+sandtrap_invest=Sandtrap.total_sandtrap_cost+sandtrap_transport+sandtrap_risk
+penstock_invest=(Penstock.penstock_storage["material"])+Penstock.penstock_storage["labour"]+(pipe_import_cost+penstock_transport+pipe_transport_cost)+(pipe_transport_risk+penstock_risk+pipe_risk+pipe_currency_risk)
 powerhouse_invest=Powerhouse.powerhouse_storage["powerhouse_cost"]+Powerhouse.powerhouse_storage["powerhouse install"]+Powerhouse.powerhouse_cost["structure labour"]+powerhouse_transport+powerhouse_risk
 turbine_invest=Powerhouse.powerhouse_storage["turbine_cost"]+Powerhouse.powerhouse_storage["turbine install"]+turbine_flight_cost+turbine_import_cost+turbine_transport_cost+turbine_risk+turbine_transport_risk+turbine_currency_risk
 electrics_invest=Powerhouse.powerhouse_storage["electric_equipment_cost"]+Powerhouse.powerhouse_storage["electrics install"]+(Powerhouse.powerhouse_storage["electrics install"]*0.1+electrics_import_cost)+(electric_risk+electrics_currency_risk+Powerhouse.powerhouse_storage["electrics install"]*0.1*0.1)
@@ -329,3 +329,4 @@ string3=".xlsx"
 string4=string1+string2+string3
 # storing into the excel file
 df.to_excel(string4)
+print("Exported to Excel")

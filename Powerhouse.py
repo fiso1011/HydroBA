@@ -89,7 +89,7 @@ class Powerhouse:
 
         lightning_protection = self.powerhouse_material["lightning protection"]
         electrics_fix = self.powerhouse_material["electrics fix"]
-        electrics_var = self.powerhouse_material["electrics var"]
+        electrics_var = self.site_data["power"]*30 #30 USD kWh
         self.powerhouse_cost["material"] = roofing + gravel + tailrace_total_cost + turbine_cost + lightning_protection +\
                                            electrics_fix + electrics_var
 
@@ -115,7 +115,7 @@ class Powerhouse:
         building_installation = 8 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # 16h: roof, lightning protection
         tailrace_installation = (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"]) * 4 *\
                                 (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # to be edited later
-        turbine_installation = 100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
+        turbine_installation = 50 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
         electrical_installation = 100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
 
         hauling_cost = (((self.help1["structure_vol"] + self.help2["structure_vol"] + self.powerhouse_dimensions["gravel_sqm"] *\

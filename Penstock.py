@@ -36,7 +36,7 @@ class Penstock:
         di_spillway=self.penstock_data["di_spillway"] #have to run macro in Excel before running
         v_anker=np.pi*((di_penstock/4)**2)*4*di_penstock*\
                 ((self.penstock_data["penstock length"])/self.penstock_data["joint distance"]) #quarter diameter, 4 times lenght of diameter
-        v_pressureblock=8 #to be changed later, minus diameter of penstock inside plus gravel
+        v_pressureblock=11.5 #to be changed later, minus diameter of penstock inside plus gravel
 
         excavation_vol=(di_penstock**2)*2*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock # 1d deep, 2d width + gravel
         gravel_sqm=2*di_penstock*self.penstock_data["penstock length"] #to be edited later when v_pressureblock is available
@@ -44,7 +44,7 @@ class Penstock:
         self.penstock_dimensions["excavation_vol"] = excavation_vol
         self.penstock_dimensions["structure_vol"] = v_anker+v_pressureblock
         self.penstock_dimensions["gravel_sqm"]=gravel_sqm
-        self.penstock_dimensions["contact_sqm"]=4 #to be edited later when v_pressureblock is available
+        self.penstock_dimensions["contact_sqm"]=8 #to be edited later when v_pressureblock is available
 
         self.penstock_storage["pipe volume"]=(np.pi*((di_penstock/2)**2)+np.pi*((di_spillway/2)**2))*self.penstock_data["penstock length"]
 
