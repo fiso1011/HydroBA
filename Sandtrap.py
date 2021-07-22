@@ -37,7 +37,7 @@ class Sandtrap:
         basin_width = np.sqrt(self.site_data["used_flow"] / (1.05 * self.sandtrap_data["basin velocity"]))  # 0.15m/2 maximum suspension start Zanke
         basin_height = basin_width * 1.25
         v_channel = self.site_data["used_flow"] / channel_area
-        v_basin = self.sandtrap_data["basin velocity"] #basin geschwindigkeit
+        v_basin=self.site_data["used_flow"]/(1.05 * (basin_width**2))
 
         dyn_viscosity = (1 / (0.1 * ((self.site_data["water_temperature"] + self.constants["kelvin"]) ** 2) - 34.335 *\
                               (self.site_data["water_temperature"] + self.constants["kelvin"]) + 2472)) #Formel wiki

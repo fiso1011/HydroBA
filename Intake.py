@@ -36,7 +36,7 @@ class Intake:
 
         wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['river width']*self.intake_data['wall thickness']
         weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['river width']
-        foundation_vol=(self.intake_data['weir height']+self.intake_data['wall thickness'])*\
+        foundation_vol=(self.intake_data['weir height']*2+self.intake_data['wall thickness'])*\
                        (self.intake_data['foundation thickness']*self.intake_data['river width'])
         intake_vol=wall_vol+weir_vol
         contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['river width']*2

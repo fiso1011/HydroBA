@@ -12,7 +12,7 @@ import numpy as np
 runversion=input("Version eingeben")
 
 # Read input files from DataInput Class
-input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input.xlsm'
+input_data_path = 'C:/Users/soere/PycharmProjects/HydroBA/HydroBA_Input_test.xlsm'
 input_data = c_di.data_input(input_data_path)  # class with all dicts from Excel
 
 # Calculate cost for each division
@@ -84,7 +84,7 @@ elif country_data["road_condition"]=="gravel":
     turbine_transport = turbine_transport_0 * 1.5
     pipe_transport = pipe_transport_0 * 1.5
     mat_transport = mat_transport_0 * 1.5
-elif country_data["road_condition"] == "paved":
+elif country_data["road_condition"] == "unsurfaced":
     turbine_transport = turbine_transport_0 * 2.5
     pipe_transport = pipe_transport_0 * 2.5
     mat_transport = mat_transport_0 * 2.5

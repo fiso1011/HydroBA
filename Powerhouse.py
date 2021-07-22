@@ -35,7 +35,7 @@ class Powerhouse:
 
     def calculate_powerhouse_dimensions(self):
         exc_1 = (5 ** 2) * np.tan(np.arcsin(self.penstock_data["height drop"] / self.penstock_data["penstock length"])) *\
-                0.5 * 10 * 0.5  # 5*10m, building 5*10m slope excavation
+                0.5 * 10 * 0.5  #building 5*10m slope excavation,half width terrace
         exc_2 = 5 * 10 * (0.5 + self.raw_material["gravel_thickness"]) + (1.5 + 2 * self.powerhouse_data["wall_width"]) * 1.5 *\
                 5  # Foundation and Channel under powerhouse
         foundation_vol = 5 * 10 * 0.5
@@ -79,7 +79,7 @@ class Powerhouse:
 
         # Turbine price
         if self.powerhouse_material["turbine type"] == "FR":
-            turbine_cost = (190.37 * np.power(self.penstock_data["height drop"], 1.27963) + 1441610 *\
+            turbine_cost = (190.37 * np.power(self.penstock_data["height drop"], 1.27963) + 1441610.56*\
                             np.power((self.site_data["used_flow"] * 1000), 0.03064) +\
                             9.62402 * np.power(self.site_data["power"], 1.28487) - 1621571.28)*1.05*self.usd_conversion["eur_usd"]#1.05 inflation
         elif self.powerhouse_material["turbine type"] == "PE":
