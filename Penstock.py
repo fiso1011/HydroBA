@@ -32,18 +32,15 @@ class Penstock:
 
 
     def calculate_penstock_dimensions(self):
-        v_penstock=self.penstock_data["velocity"]
-        di_penstock=((4*(self.site_data["used_flow"])/v_penstock)/np.pi)**(0.5)
+        di_penstock=((4*(self.site_data["used_flow"])/self.penstock_data["velocity"])/np.pi)**(0.5)
         degree=np.deg2rad(self.penstock_data["cs_degree"])
         di_spillway=((self.site_data["used_flow"]/(111*((self.penstock_data["height drop"]/\
         self.penstock_data["penstock length"])**0.5)*(np.pi-0.5*(degree-np.sin(degree)))*(((np.pi-0.5*(degree-np.sin(degree)))/\
         ((2*np.pi-degree)))**(2/3))))**(1/2.66))*2
-        #self.penstock_data["di_spillway"] #have to run macro in Excel before running
-        v_anker=np.pi*((di_penstock/4)**2)*4*di_penstock*\
-                ((self.penstock_data["penstock length"])/self.penstock_data["joint distance"]) #quarter diameter, 4 times lenght of diameter
-        v_pressureblock=8 #to be changed later, minus diameter of penstock inside plus gravel
-        v_tailrace_basin=3
-
+        v_anker=(((di_penstock/2)**2)*np.pi)*self.penstock_data["penstock length"] #1m^3 per 1 ton pipe
+        v_pressureblock=self.site_data["used_flow"]*20 #flatrate assumption
+        tailrace_basin_width=(self.site_data["used_flow"]**(1/3))
+        v_tailrace_basin=(tailrace_basin_width**2)*2+((tailrace_basin_width+0.8)*tailrace_basin_width)*3 #site length of square, 5 sides, thickness
         excavation_vol=(di_penstock**2)*2*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock # 1d deep, 2d width + gravel
         gravel_sqm=2*di_penstock*self.penstock_data["penstock length"]+4 #to be edited later when v_pressureblock is available
 
@@ -56,7 +53,7 @@ class Penstock:
         self.penstock_storage["di_spillway"]=di_spillway
 
     def calculate_penstock_material(self):
-        di_penstock=(((4 * (self.site_data["used_flow"]) / self.penstock_data["velocity"]) / np.pi) ** (0.5))
+        di_penstock=(((4*(self.site_data["used_flow"])/self.penstock_data["velocity"])/np.pi)**(0.5))
         penstock_rcc =c_rm.Raw_Material(self.penstock_dimensions,self.raw_material,self.constants)
         raw_mat_price=penstock_rcc.calculate_rcc()
         self.penstock_cost["raw material"] = raw_mat_price
@@ -65,27 +62,72 @@ class Penstock:
         vlies=self.penstock_dimensions["gravel_sqm"]*self.channel_material["drainage vlies"]
 
         #calculate pipe cost for both penstock and spillway pipe
+        angle=np.arccos(self.penstock_data["height drop"]/self.penstock_data["penstock length"])
+        drop=self.penstock_data["height drop"]
+        if drop < 45:
+            seg_6=self.penstock_data["penstock length"]
+            seg_10=0
+            seg_16=0
+            seg_20=0
+            seg_25=0
+        if drop >=45 and drop<75:
+            seg_6=45/np.cos(angle)
+            seg_10=(drop/np.cos(angle))-seg_6
+            seg_16 = 0
+            seg_20 = 0
+            seg_25 = 0
+        elif drop >=75 and drop<120:
+            seg_6 = 45 / np.cos(angle)
+            seg_10 = (75 / np.cos(angle)) - seg_6
+            seg_16 = (drop / np.cos(angle)) - seg_6 -seg_10
+            seg_20 = 0
+            seg_25 = 0
+        elif drop >=120 and drop<150:
+            seg_6 = 45 / np.cos(angle)
+            seg_10 = (75 / np.cos(angle)) - seg_6
+            seg_16 = (120 / np.cos(angle)) - seg_6 - seg_10
+            seg_20 = (drop / np.cos(angle)) - seg_6 - seg_10 -seg_16
+            seg_25 = 0
+        elif drop >=150 and drop<187.5:
+            seg_6 = 45 / np.cos(angle)
+            seg_10 = (75 / np.cos(angle)) - seg_6
+            seg_16 = (120 / np.cos(angle)) - seg_6 - seg_10
+            seg_20 = (150 / np.cos(angle)) - seg_6 - seg_10 - seg_16
+            seg_25 = (drop / np.cos(angle)) - seg_6 - seg_10 - seg_20
+        elif drop >=187.5:
+            seg_6 = 45 / np.cos(angle)
+            seg_10 = (75 / np.cos(angle)) - seg_6
+            seg_16 = (120 / np.cos(angle)) - seg_6 - seg_10
+            seg_20 = (150 / np.cos(angle)) - seg_6 - seg_10 - seg_16
+            seg_25 = (drop / np.cos(angle)) - seg_6 - seg_10 - seg_16 -seg_20
+
         if self.penstock_material["penstock material"] == "PVC":
-            pipe1_cost= 0.00005*((self.penstock_data["height drop"]*1.5)*self.constants["bar_meter"]) * \
-                        np.power((di_penstock*1000),1.98)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])# only pipe
-            joint1_cost=0.0045*np.power((di_penstock*1000),1.98)*((self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])/self.penstock_data["joint distance"])
+            pressure_6 =0.00005*(6) * np.power((di_penstock*1000),1.98)*seg_6
+            pressure_10 = 0.00005*(10) * np.power((di_penstock*1000),1.98)*seg_10
+            pressure_16 = 0.00005*(16) * np.power((di_penstock*1000),1.98)*seg_16
+            pressure_20 = 0.00005*(20) * np.power((di_penstock*1000),1.98)*seg_20
+            pressure_25 = 0.00005*(25) * np.power((di_penstock*1000),1.98)*seg_25
+            pipe1_cost= pressure_6+pressure_10+pressure_16+pressure_20+pressure_25
+            joint1_cost=0.0045*np.power((di_penstock*1000),1.98)*(self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts1_cost=(pipe1_cost+joint1_cost)*0.05
-            pipe2_cost = 0.00005*((self.penstock_data["height drop"]*1.5)*self.constants["bar_meter"])*\
-                         np.power((self.penstock_storage["di_spillway"]*1000),1.98)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])
+            pipe2_cost = 0.00005*(6)*np.power((self.penstock_storage["di_spillway"]*1000),1.98)*self.penstock_data["penstock length"]
             joint2_cost = 0.0045*np.power((self.penstock_storage["di_spillway"]*1000),1.98)*\
-                          ((self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])/self.penstock_data["joint distance"])
+                          (self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.05
         elif self.penstock_material["penstock material"] == "HDPE":
-            pipe1_cost = (0.00004*((self.penstock_data["height drop"]*1.5)*self.constants["bar_meter"])+0.00008)*\
-                         np.power((di_penstock*1000),1.99)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])  # only pipe
+            pressure_6=(0.00004*(6)+0.00008)*np.power((di_penstock*1000),1.99)*seg_6
+            pressure_10 =(0.00004*(10)+0.00008)*np.power((di_penstock*1000),1.99)*seg_10
+            pressure_16 =(0.00004*(16)+0.00008)*np.power((di_penstock*1000),1.99)*seg_16
+            pressure_20 =(0.00004*(20)+0.00008)*np.power((di_penstock*1000),1.99)*seg_20
+            pressure_25 =(0.00004*(25)+0.00008)*np.power((di_penstock*1000),1.99)*seg_25
+            pipe1_cost = pressure_6+pressure_10+pressure_16+pressure_20+pressure_25
             joint1_cost = 0.0018*np.power((di_penstock*1000),2.18)*(self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts1_cost = (pipe1_cost + joint1_cost) * 0.05
-            pipe2_cost = (0.00004*((self.penstock_data["height drop"]*1.5)*self.constants["bar_meter"])+0.00008)*\
-                         np.power((self.penstock_storage["di_spillway"]*1000),1.99)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])
+            pipe2_cost = (0.00004*(6)+0.00008)*np.power((self.penstock_storage["di_spillway"]*1000),1.99)*self.penstock_data["penstock length"]
             joint2_cost = 0.0018*np.power((self.penstock_storage["di_spillway"]*1000),2.18)*\
                           (self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.05
-        pipes_total_cost=pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost
+        pipes_total_cost=(pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost)
 
         self.penstock_cost["material"]= gravel+vlies+pipes_total_cost
         self.penstock_storage["penstock pipe total"] = pipes_total_cost

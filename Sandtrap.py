@@ -34,10 +34,10 @@ class Sandtrap:
         channel_perimeter = channel_width * (1 + 2 * self.channel_data["security height"])
         channel_area = channel_width ** 2
 
-        basin_width = np.sqrt(self.site_data["used_flow"] / (1.05 * self.sandtrap_data["basin velocity"]))  # 0.15m/2 maximum suspension start Zanke
+        basin_width = np.sqrt(self.site_data["used_flow"] / (0.75 * self.sandtrap_data["basin velocity"]))# 0.15m/2 maximum suspension start Zanke
         basin_height = basin_width * 1.25
         v_channel = self.site_data["used_flow"] / channel_area
-        v_basin=self.site_data["used_flow"]/(1.05 * (basin_width**2))
+        v_basin=self.site_data["used_flow"]/(0.75 * (basin_width**2))
 
         dyn_viscosity = (1 / (0.1 * ((self.site_data["water_temperature"] + self.constants["kelvin"]) ** 2) - 34.335 *\
                               (self.site_data["water_temperature"] + self.constants["kelvin"]) + 2472)) #Formel wiki
@@ -47,7 +47,7 @@ class Sandtrap:
                      (kin_viscosity ** 2)) ** (1 / 3)) * max_diameter
         v_wo = ((11 * kin_viscosity) / max_diameter) * (np.sqrt(1 + 0.01 * ((d_factor) ** 3)) - 1)
         k_factor = (1 / ((v_basin ** 0.4) * (v_channel ** 0.3))) * (1 / np.tan(np.deg2rad(5))) *\
-                   (1 / ((self.constants["gravitation"] * (1.05 * (basin_width**2) / (2.98 * basin_width))) ** 0.15))
+                   (1 / ((self.constants["gravitation"] * (0.75 * (basin_width**2) / (2.98 * basin_width))) ** 0.15))
         v_w = v_wo - (0.21 / k_factor) #Formula Ortmann
 
         settling_lenght = (v_basin / v_w) * basin_height
@@ -104,14 +104,17 @@ class Sandtrap:
             wall2_vol=hdiff1*(settling_lenght+pbasin_width) #second part of wall, constant basin width
             basin_volume=(a_1_1+a_1_2+a_2_1+a_2_2)*wall_width+spillway_length*1*0.2+(spillway_length+2)*(0.3*0.2) #v basin+catchment/spillway
             pbasin_volume=(a_3_1+a_3_2+a_3_3)*wall_width
-            structure_vol=wall1_vol+wall2_vol+basin_volume+pbasin_volume
+            structure_vol1=wall1_vol+wall2_vol+basin_volume
+            structure_vol2=pbasin_volume
         else:
             basin_vol=(a_1_1+a_1_2+a_2_1+a_2_2)*wall_width+spillway_length*1*0.2+(spillway_length+2)*(0.3*0.2)
             pbasin_volume = (a_3_1 + a_3_2 + a_3_3) * wall_width
-            structure_vol=basin_vol+pbasin_volume
+            structure_vol1=basin_vol
+            structure_vol2 = pbasin_volume
 
         self.sandtrap_dimensions["excavation_vol"] = exc_vol1+exc_vol2+exc_vol3
-        self.sandtrap_dimensions["structure_vol"] = structure_vol
+        self.sandtrap_dimensions["structure_vol"] = structure_vol1
+        self.sandtrap_storage["structure_vol"] = structure_vol2
         self.sandtrap_dimensions["gravel_sqm"]=gravel_sqm1+gravel_sqm2
         self.sandtrap_dimensions["contact_sqm"]=(a_1_1+a_1_2+a_2_1+a_2_2+a_3_1+a_3_2+a_3_3)*1.5 #formwork or surface finish area
         self.sandtrap_dimensions["basin width"]=basin_width
@@ -119,14 +122,18 @@ class Sandtrap:
     def calculate_sandtrap_material(self):
         # calculate structure material price
         if self.sandtrap_material["structural material"]=="RCC":
-            sandtrap_rcc =c_rm.Raw_Material(self.sandtrap_dimensions,self.raw_material,self.constants)
-            raw_mat_price=sandtrap_rcc.calculate_rcc()
+            sandtrap_rcc=c_rm.Raw_Material(self.sandtrap_dimensions,self.raw_material,self.constants)
+            raw_mat_price1=sandtrap_rcc.calculate_rcc()
         elif self.sandtrap_material["structural material"]=="MAS":
             sandtrap_mas=c_rm.Raw_Material(self.sandtrap_dimensions,self.raw_material,self.constants)
-            raw_mat_price=sandtrap_mas.calculate_masonry()
+            raw_mat_price1=sandtrap_mas.calculate_masonry()
             self.sandtrap_dimensions["structure_vol"] = self.sandtrap_dimensions["structure_vol"] +\
                                                         self.sandtrap_dimensions["contact_sqm"] * self.raw_material["surface_finish"] # cement finish
-        self.sandtrap_cost["raw material"] = raw_mat_price
+        #pressure basin concrete
+        sandtrap_rcc2 = c_rm.Raw_Material(self.sandtrap_storage, self.raw_material, self.constants)
+        raw_mat_price2 = sandtrap_rcc2.calculate_rcc()
+        #sum
+        self.sandtrap_cost["raw material"] = raw_mat_price1+raw_mat_price2
 
         gravel=self.sandtrap_dimensions["gravel_sqm"]*self.raw_material["gravel_thickness"]*self.raw_material["gravel"]
         flush_gate=185.38*np.exp(2.3306*0.2*self.sandtrap_dimensions["basin width"])

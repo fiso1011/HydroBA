@@ -92,13 +92,13 @@ total_import_transport=turbine_flight_cost+total_import_cost+pipe_transport+turb
 
 #total powerplant cost
 cumulated_divisions_cost=cumulated_divisions_0+structure_misc_cost+installation_misc_cost+total_import_transport
-planning_cost=cumulated_divisions_cost*0.08
+planning_cost=cumulated_divisions_cost*country_data["planning_cost"]
 cumulated_powerplant_cost=cumulated_divisions_cost+planning_cost
 
 # calculate risk on top for each division
 intake_risk=(Intake.intake_storage["material"]+Intake.intake_storage["labour"])*0.1
-channel_risk=(Channel.channel_storage["material"]+Channel.channel_storage["labour"])*0.2 #geo obstacles
-sandtrap_risk=(Sandtrap.sandtrap_storage["material"]+Sandtrap.sandtrap_storage["labour"])*0.2 #complex geometry
+channel_risk=(Channel.channel_storage["material"]+Channel.channel_storage["labour"])*0.15 #geo obstacles
+sandtrap_risk=(Sandtrap.sandtrap_storage["material"]+Sandtrap.sandtrap_storage["labour"])*0.15 #complex geometry
 penstock_risk=(Penstock.penstock_storage["material"]+Penstock.penstock_storage["labour"])*0.1
 pipe_risk=Penstock.penstock_storage["penstock pipe total"]*0.1
 powerhouse_risk=(Powerhouse.powerhouse_storage["powerhouse_cost"]+Powerhouse.powerhouse_storage["labour"])*0.1
@@ -106,11 +106,11 @@ turbine_risk=Powerhouse.powerhouse_storage["turbine_cost"]*0.1
 electric_risk=Powerhouse.powerhouse_storage["electric_equipment_cost"]*0.1
 powerhouse_total_risk=turbine_risk+electric_risk+powerhouse_risk
 
-misc_risk=(installation_misc_cost+structure_misc_cost)*0.2
+misc_risk=(installation_misc_cost+structure_misc_cost)*0.15
 planning_risk=planning_cost*0.1
 
-turbine_transport_risk=(turbine_flight_cost+turbine_transport)*0.25
-pipe_transport_risk=pipe_transport*0.25
+turbine_transport_risk=(turbine_flight_cost+turbine_transport)*0.2
+pipe_transport_risk=pipe_transport*0.2
 mat_transport_risk=mat_transport*0.1
 
 pipe_currency_risk=(Penstock.penstock_storage["penstock pipe total"]+Powerhouse.powerhouse_storage["tailrace total cost"])*0.05
@@ -186,12 +186,12 @@ powerhouse_total_annuity=turbine_annuity+powerhouse_annuity+electrical_annuity
 # calculate running cost labour & material
 om_annual_cost=total_investing_cost*0.03
 # calculate total annual cost
-total_annual_cost=waterway_annuity+penstock_annuity+powerhouse_total_annuity+rest_annuity+om_annual_cost
+total_annual_cost=(waterway_annuity+penstock_annuity+powerhouse_total_annuity+rest_annuity)+om_annual_cost
 print("total annual cost")
 print(total_annual_cost)
 
 #plant hours uptime
-plant_hours=365*24*(6/7)*0.5#50% used
+plant_hours=365*24*(6/7)*site_data["usage_factor"]#50% used
 total_kwh=site_data["power"]*plant_hours*0.8 #water flow average
 print("total kwh")
 print(total_kwh)
@@ -204,9 +204,21 @@ print("Turbine percent")
 t_percent=turbine_invest/total_investing_cost
 print(t_percent)
 
-# wirtschaftlichkeit rechnung, annuitäten...
-#Sensitivitäten
+#Export into Excel
+dataframe = {'Kostenart': ['Zulauf','Kanal','Sandfang','Fallrohr','Maschinenhaus','Turbine','Elektrik','Planung','Sonstiges','Summe','Annuität','Leistung in kwH','USD/kWh','Turbine Anteil'],
+        'Kosten': [intake_invest,channel_invest,sandtrap_invest,penstock_invest,powerhouse_invest,turbine_invest,electrics_invest,planning_invest,misc_invest,total_investing_cost,total_annual_cost,total_kwh,lcoe,t_percent]
+        }
 
+df = pd.DataFrame(dataframe, columns = ['Kostenart', 'Kosten'])
+string1="C:/Users/soere/PycharmProjects/HydroBA/Output/Kosten_Output_"
+string2=str(runversion)
+string3=".xlsx"
+string4=string1+string2+string3
+# storing into the excel file
+df.to_excel(string4)
+print("Exported to Excel")
+
+#Plot using different methods
 def plot_bar_chart():
     #BAR CHART
     # Creating our own dataframe
@@ -272,13 +284,21 @@ def plot_pie_chart():
 
 def plot_bar2_chart():
     #https://matplotlib.org/stable/gallery/lines_bars_and_markers/bar_stacked.html#sphx-glr-gallery-lines-bars-and-markers-bar-stacked-py
-    #BAR CHART 2
+    #BAR CHART 2, Cost of the sections without risk added
     N = 5
-    material = ((Intake.intake_storage["material"]+Channel.channel_storage["material"]+Sandtrap.sandtrap_storage["material"]),Penstock.penstock_storage["material"],Powerhouse.powerhouse_storage["powerhouse_cost"], Powerhouse.powerhouse_storage["turbine_cost"],Powerhouse.powerhouse_storage["electric_equipment_cost"])
-    labour = ((Intake.intake_storage["labour"]+Channel.channel_storage["labour"]+Sandtrap.sandtrap_storage["labour"]),Penstock.penstock_storage["labour"], (Powerhouse.powerhouse_storage["powerhouse install"]+Powerhouse.powerhouse_cost["structure labour"]),Powerhouse.powerhouse_storage["turbine install"],Powerhouse.powerhouse_storage["electrics install"])
+    material = ((Intake.intake_storage["material"]+Channel.channel_storage["material"]+Sandtrap.sandtrap_storage["material"]),\
+    Penstock.penstock_storage["material"],Powerhouse.powerhouse_storage["powerhouse_cost"], Powerhouse.powerhouse_storage["turbine_cost"],\
+                Powerhouse.powerhouse_storage["electric_equipment_cost"])
+    labour = ((Intake.intake_storage["labour"]+Channel.channel_storage["labour"]+Sandtrap.sandtrap_storage["labour"]),\
+              Penstock.penstock_storage["labour"], (Powerhouse.powerhouse_storage["powerhouse install"]+Powerhouse.powerhouse_cost["structure labour"]),\
+              Powerhouse.powerhouse_storage["turbine install"],Powerhouse.powerhouse_storage["electrics install"])
     addedvalues=tuple(map(sum, zip(material, labour)))
-    transport = ((intake_transport+channel_transport+sandtrap_transport),(pipe_import_cost+penstock_transport+pipe_transport_cost),powerhouse_transport,(turbine_flight_cost+turbine_import_cost+turbine_transport_cost),(Powerhouse.powerhouse_storage["electrics install"]*0.1+electrics_import_cost))
-    totalStd = ((intake_risk+channel_risk+sandtrap_risk), (pipe_transport_risk+penstock_risk+pipe_risk+pipe_currency_risk), powerhouse_risk, (turbine_risk+turbine_transport_risk+turbine_currency_risk), (electric_risk+electrics_currency_risk+Powerhouse.powerhouse_storage["electrics install"]*0.1*0.1))
+    transport = ((intake_transport+channel_transport+sandtrap_transport),(pipe_import_cost+penstock_transport+pipe_transport_cost),\
+                 powerhouse_transport,(turbine_flight_cost+turbine_import_cost+turbine_transport_cost),\
+                 (Powerhouse.powerhouse_storage["electrics install"]*0.1+electrics_import_cost))
+    totalStd = ((intake_risk+channel_risk+sandtrap_risk), (pipe_transport_risk+penstock_risk+pipe_risk+pipe_currency_risk), \
+                powerhouse_risk, (turbine_risk+turbine_transport_risk+turbine_currency_risk), \
+                (electric_risk+electrics_currency_risk+Powerhouse.powerhouse_storage["electrics install"]*0.1*0.1))
     ind = np.arange(N)    # the x locations for the groups
     width = 0.4       # the width of the bars: can also be len(x) sequence
 
@@ -317,16 +337,3 @@ elif plottype=="Pie":
     plot_pie_chart()
 elif plottype=="Bar2":
     plot_bar2_chart()
-
-dataframe = {'Kostenart': ['Zulauf','Kanal','Sandfang','Fallrohr','Maschinenhaus','Turbine','Elektrik','Planung','Sonstiges','Summe','Annuität','Leistung in kwH','USD/kWh','Turbine Anteil'],
-        'Kosten': [intake_invest,channel_invest,sandtrap_invest,penstock_invest,powerhouse_invest,turbine_invest,electrics_invest,planning_invest,misc_invest,total_investing_cost,total_annual_cost,total_kwh,lcoe,t_percent]
-        }
-
-df = pd.DataFrame(dataframe, columns = ['Kostenart', 'Kosten'])
-string1="C:/Users/soere/PycharmProjects/HydroBA/Output/Kosten_Output_"
-string2=str(runversion)
-string3=".xlsx"
-string4=string1+string2+string3
-# storing into the excel file
-df.to_excel(string4)
-print("Exported to Excel")

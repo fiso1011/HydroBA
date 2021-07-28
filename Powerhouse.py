@@ -64,28 +64,28 @@ class Powerhouse:
 
         # tailrace pipe
         if self.powerhouse_material["tailrace material"] == "PVC":
-            pipe_cost = 0.00005 * ((self.powerhouse_data["tailrace drop"] * 1.5) *self.constants["bar_meter"]) *\
-                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)  # only pipe
+            pipe_cost = 0.00005 * (self.powerhouse_data["tailrace drop"] *self.constants["bar_meter"]) *\
+                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*self.powerhouse_data["tailrace length"]  # only pipe
             joint_cost = 0.0045 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05
         elif self.powerhouse_material["tailrace material"] == "HDPE":
-            pipe_cost = (0.00004 * ((self.powerhouse_data["tailrace drop"] * 1.5) *self.constants["bar_meter"]) + 0.00008) * \
-                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.99) * self.powerhouse_data["tailrace length"]  # only pipe
+            pipe_cost = (0.00004 * (self.powerhouse_data["tailrace drop"]  *self.constants["bar_meter"]) + 0.00008) * \
+                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.99) *self.powerhouse_data["tailrace length"]  # only pipe
             joint_cost = 0.0018 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 2.18) *\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05
-        tailrace_total_cost = pipe_cost + joint_cost + bolts_cost
+        tailrace_total_cost = (pipe_cost + joint_cost + bolts_cost)
 
         # Turbine price
         if self.powerhouse_material["turbine type"] == "FR":
             turbine_cost = (190.37 * np.power(self.penstock_data["height drop"], 1.27963) + 1441610.56*\
                             np.power((self.site_data["used_flow"] * 1000), 0.03064) +\
-                            9.62402 * np.power(self.site_data["power"], 1.28487) - 1621571.28)*1.05*self.usd_conversion["eur_usd"]#1.05 inflation
+                            9.62402 * np.power(self.site_data["power"], 1.28487) - 1621571.28)*1.05*self.usd_conversion["eur_usd"]#1.05 inflation since 2016
         elif self.powerhouse_material["turbine type"] == "PE":
             turbine_cost = (1358677.67 * np.power(self.penstock_data["height drop"], 0.014) + 8489.85 *\
                             np.power((self.site_data["used_flow"] * 1000), 0.515) +\
-                            3382.1 * np.power(self.site_data["power"], 0.416) - 1479160.63)*1.05*self.usd_conversion["eur_usd"]
+                            3382.1 * np.power(self.site_data["power"], 0.416) - 1479160.63)*1.05*self.usd_conversion["eur_usd"]#1.05 inflation since 2016
 
         lightning_protection = self.powerhouse_material["lightning protection"]
         electrics_fix = self.powerhouse_material["electrics fix"]

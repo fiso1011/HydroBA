@@ -36,7 +36,7 @@ class Intake:
 
         wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['river width']*self.intake_data['wall thickness']
         weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['river width']
-        foundation_vol=(self.intake_data['weir height']*2+self.intake_data['wall thickness'])*\
+        foundation_vol=(self.intake_data['weir height']*1.5+self.intake_data['wall thickness'])*\
                        (self.intake_data['foundation thickness']*self.intake_data['river width'])
         intake_vol=wall_vol+weir_vol
         contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['river width']*2
@@ -58,8 +58,7 @@ class Intake:
             self.intake_dimensions["structure_vol"]=self.intake_dimensions["structure_vol"]+\
                                                     self.intake_dimensions["contact_sqm"]*self.raw_material["surface_finish"] #cement finish vol for masonry walls
         self.intake_cost["raw material"] = raw_mat_price
-        self.intake_cost["material"]=self.intake_material["coarse rake"]+224.3*\
-                                     np.exp(2.3306*np.sqrt(self.site_data["average_flow"]**(1/(float(3))))) #average flow sized sluice gate, 1m/s
+        self.intake_cost["material"]=self.intake_material["coarse rake"] #average flow sized sluice gate
 
     def calculate_intake_labour(self):
         self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] *\
