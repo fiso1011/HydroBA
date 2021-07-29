@@ -64,14 +64,12 @@ class Powerhouse:
 
         # tailrace pipe
         if self.powerhouse_material["tailrace material"] == "PVC":
-            pipe_cost = 0.00005 * (self.powerhouse_data["tailrace drop"] *self.constants["bar_meter"]) *\
-                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*self.powerhouse_data["tailrace length"]  # only pipe
+            pipe_cost = 0.00005 * (6) *np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*self.powerhouse_data["tailrace length"]  # only pipe
             joint_cost = 0.0045 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05
         elif self.powerhouse_material["tailrace material"] == "HDPE":
-            pipe_cost = (0.00004 * (self.powerhouse_data["tailrace drop"]  *self.constants["bar_meter"]) + 0.00008) * \
-                        np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.99) *self.powerhouse_data["tailrace length"]  # only pipe
+            pipe_cost = (0.00004 * (6) + 0.00008) * np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.99) *self.powerhouse_data["tailrace length"]  # only pipe
             joint_cost = 0.0018 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 2.18) *\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05

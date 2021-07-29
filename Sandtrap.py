@@ -8,6 +8,7 @@ class Sandtrap:
         self.total_sandtrap_cost
         #import relevant Dicts
         self.site_data = input_data.input_dict["site_data"]["dict"]
+        self.intake_material= input_data.input_dict["intake_material"]["dict"]
         self.channel_data = input_data.input_dict["channel_data"]["dict"]
         self.labour_cost = input_data.input_dict["labour_cost"]["dict"]
         self.labour_time = input_data.input_dict["labour_time"]["dict"]
@@ -59,8 +60,8 @@ class Sandtrap:
         a1 = (0.84 / 2.98) * channel_perimeter  # channel-sided side length of the truncated pyramid
         a2 = 0.84 * basin_width  # basin-sided side length of the truncated pyramid (idealized shape 0,84^2*1.5=1.05)
         #1:upper 2:lower part volume of channel/santrap opening
-        v_1_1 = ((a1 ** 2) + a1 * a2 + (a2 ** 2)) * (Uv_length / 3)
-        v_1_2 = (3 / 12) * ((a1 ** 2) + a1 * a2 + (a2 ** 2)) * (Uv_length * (1 / np.tan(np.pi / 3)))  # cotengens with radian
+        v_1_1 = (((a1 ** 2) + a1 * a2 + (a2 ** 2)) * Uv_length)/3
+        v_1_2 = (3 / 12) * ((a1 ** 2) + a1 * a2 + (a2 ** 2)) * Uv_length * (1 / np.tan(np.pi / 3))  # cotengens with radian
         #1:upper 2:lower part area of channel/santrap opening
         a_1_1 = (channel_width + (0.75 * basin_width - channel_width) * 0.5) * (np.sqrt(Uv_length**2+(basin_width-channel_width)**2)) * 2
         a_1_2 = ((0.5*basin_width) / np.cos(np.deg2rad(38.66))) * (np.sqrt(Uv_length**2+(basin_width-channel_width)**2)) * 0.5 * 2
@@ -93,7 +94,7 @@ class Sandtrap:
                  ((pbasin_width+2*wall_width)**3)*(np.tan(np.deg2rad(slope))*0.5)
 
         #Gravel Area
-        gravel_sqm1=(a_1_2+a_2_2+(settling_lenght**2)*0.04) #sandtrap, slope
+        gravel_sqm1=(a_1_2+a_2_2) #sandtrap, slope
         gravel_sqm2=a_3_1 #pressure basin
 
         #Structure Volume (with or without walls)
@@ -101,7 +102,7 @@ class Sandtrap:
             hdiff1=((basin_width+2*wall_width)*(np.tan(np.deg2rad(slope))-0.75*basin_width))
             hdiff0=hdiff1*(channel_perimeter/(2.98*basin_width))
             wall1_vol=((hdiff0+0.5*(hdiff1-hdiff0))*Uv_length)*wall_width #first part of wall
-            wall2_vol=hdiff1*(settling_lenght+pbasin_width) #second part of wall, constant basin width
+            wall2_vol=hdiff1*settling_lenght*wall_width#second part of wall, constant basin width
             basin_volume=(a_1_1+a_1_2+a_2_1+a_2_2)*wall_width+spillway_length*1*0.2+(spillway_length+2)*(0.3*0.2) #v basin+catchment/spillway
             pbasin_volume=(a_3_1+a_3_2+a_3_3)*wall_width
             structure_vol1=wall1_vol+wall2_vol+basin_volume
@@ -136,9 +137,7 @@ class Sandtrap:
         self.sandtrap_cost["raw material"] = raw_mat_price1+raw_mat_price2
 
         gravel=self.sandtrap_dimensions["gravel_sqm"]*self.raw_material["gravel_thickness"]*self.raw_material["gravel"]
-        flush_gate=185.38*np.exp(2.3306*0.2*self.sandtrap_dimensions["basin width"])
-        fine_rake=self.sandtrap_material["fine rake"]
-        self.sandtrap_cost["material"]= gravel+flush_gate+fine_rake
+        self.sandtrap_cost["material"]= gravel+self.sandtrap_material["fine rake"]+self.intake_material["sluice gate"]
 
     def calculate_sandtrap_labour(self):
         self.sandtrap_cost["excavation labour"] = (self.sandtrap_dimensions["excavation_vol"] *\

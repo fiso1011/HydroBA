@@ -41,7 +41,8 @@ class Penstock:
         v_pressureblock=self.site_data["used_flow"]*20 #flatrate assumption
         tailrace_basin_width=(self.site_data["used_flow"]**(1/3))
         v_tailrace_basin=(tailrace_basin_width**2)*2+((tailrace_basin_width+0.8)*tailrace_basin_width)*3 #site length of square, 5 sides, thickness
-        excavation_vol=(di_penstock**2)*2*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock # 1d deep, 2d width + gravel
+        excavation_vol=(di_penstock**2)*2*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock+\
+                       (tailrace_basin_width+0.8)*tailrace_basin_width*0.4 # 1d deep, 2d width + gravel
         gravel_sqm=2*di_penstock*self.penstock_data["penstock length"]+4 #to be edited later when v_pressureblock is available
 
         self.penstock_dimensions["excavation_vol"] = excavation_vol
@@ -110,9 +111,9 @@ class Penstock:
             pipe1_cost= pressure_6+pressure_10+pressure_16+pressure_20+pressure_25
             joint1_cost=0.0045*np.power((di_penstock*1000),1.98)*(self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts1_cost=(pipe1_cost+joint1_cost)*0.05
-            pipe2_cost = 0.00005*(6)*np.power((self.penstock_storage["di_spillway"]*1000),1.98)*self.penstock_data["penstock length"]
+            pipe2_cost = 0.00005*(6)*np.power((self.penstock_storage["di_spillway"]*1000),1.98)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])
             joint2_cost = 0.0045*np.power((self.penstock_storage["di_spillway"]*1000),1.98)*\
-                          (self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
+                          ((self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])/self.penstock_data["joint distance"])
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.05
         elif self.penstock_material["penstock material"] == "HDPE":
             pressure_6=(0.00004*(6)+0.00008)*np.power((di_penstock*1000),1.99)*seg_6
@@ -123,9 +124,9 @@ class Penstock:
             pipe1_cost = pressure_6+pressure_10+pressure_16+pressure_20+pressure_25
             joint1_cost = 0.0018*np.power((di_penstock*1000),2.18)*(self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
             bolts1_cost = (pipe1_cost + joint1_cost) * 0.05
-            pipe2_cost = (0.00004*(6)+0.00008)*np.power((self.penstock_storage["di_spillway"]*1000),1.99)*self.penstock_data["penstock length"]
+            pipe2_cost = (0.00004*(6)+0.00008)*np.power((self.penstock_storage["di_spillway"]*1000),1.99)*(self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])
             joint2_cost = 0.0018*np.power((self.penstock_storage["di_spillway"]*1000),2.18)*\
-                          (self.penstock_data["penstock length"]/self.penstock_data["joint distance"])
+                          ((self.penstock_data["penstock length"]+self.powerhouse_data["tailrace length"])/self.penstock_data["joint distance"])
             bolts2_cost = (pipe2_cost + joint2_cost) * 0.05
         pipes_total_cost=(pipe1_cost+pipe2_cost+joint1_cost+joint2_cost+bolts1_cost+bolts2_cost)
 
