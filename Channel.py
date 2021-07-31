@@ -92,5 +92,5 @@ class Channel:
                               self.raw_material["surface_finish"]) * self.constants["p_structure"]) / 50) * 2 * self.labour_cost["hauling_cost"]
             self.channel_cost["structure labour"] = surface_labour+mas_labour+hauling_cost
 
-        self.channel_storage["material"] = self.channel_cost["raw material"] + self.channel_cost["material"]
-        self.channel_storage["labour"] = self.channel_cost["excavation labour"] + self.channel_cost["structure labour"]+self.channel_cost["laying"]
+        self.channel_storage["material"] = round(self.channel_cost["raw material"] + self.channel_cost["material"],0)
+        self.channel_storage["labour"] = round(self.channel_cost["excavation labour"] + self.channel_cost["structure labour"]+self.channel_cost["laying"],0)

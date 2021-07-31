@@ -32,14 +32,14 @@ class Intake:
     def calculate_intake_dimensions(self):
         q_worst=self.site_data["maximum_flow"]*20   #Assumption in Micro Hydro Design manual
         weir_over_height = ((1/((2/3)*np.sqrt(2*self.constants["gravitation"])))*q_worst)/\
-                           (self.intake_data ['weir coefficient']*self.intake_data["river width"]) #weir formula Poleni
+                           (self.intake_data ['weir coefficient']*self.intake_data["weir width"]) #weir formula Poleni
 
-        wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['river width']*self.intake_data['wall thickness']
-        weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['river width']
+        wall_vol=(self.intake_data['weir height']+weir_over_height)*self.intake_data['weir width']*self.intake_data['wall thickness']
+        weir_vol=np.square(self.intake_data['weir height'])*(0.25+0.25/2)*self.intake_data['weir width']
         foundation_vol=(self.intake_data['weir height']*1.5)* self.intake_data['foundation thickness']*\
-                       (self.intake_data['river width']+self.intake_data["wall thickness"]*2)
+                       (self.intake_data['weir width']+self.intake_data["wall thickness"]*2)
         intake_vol=wall_vol+weir_vol
-        contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['river width']*2
+        contact_sqm=((self.intake_data['weir height']+weir_over_height)+self.intake_data['weir height'])*self.intake_data['weir width']*2
 
         self.intake_dimensions["intake_vol"] = intake_vol
         self.intake_dimensions["foundation_vol"]= foundation_vol
@@ -76,6 +76,6 @@ class Intake:
             hauling_cost=((self.intake_dimensions["structure_vol"]*self.constants["p_structure"])/50)*2*self.labour_cost["hauling_cost"]
             self.intake_cost["structure labour"] = surface_labour+mas_labour+hauling_cost
 
-        self.intake_storage["material"]=self.intake_cost["raw material"]+self.intake_cost["material"]
-        self.intake_storage["labour"]=self.intake_cost["excavation labour"]+self.intake_cost["structure labour"]
+        self.intake_storage["material"]=round(self.intake_cost["raw material"]+self.intake_cost["material"],0)
+        self.intake_storage["labour"]=round(self.intake_cost["excavation labour"]+self.intake_cost["structure labour"],0)
 

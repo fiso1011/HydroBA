@@ -159,5 +159,5 @@ class Sandtrap:
                               self.raw_material["surface_finish"]) * self.constants["p_structure"]) / 50) * 2 * self.labour_cost["hauling_cost"]
             self.sandtrap_cost["structure labour"] = surface_labour + mas_labour+hauling_cost
 
-        self.sandtrap_storage["material"] = self.sandtrap_cost["raw material"] + self.sandtrap_cost["material"]
-        self.sandtrap_storage["labour"] = self.sandtrap_cost["excavation labour"] + self.sandtrap_cost["structure labour"] + self.sandtrap_cost["laying"]
+        self.sandtrap_storage["material"] = round(self.sandtrap_cost["raw material"] + self.sandtrap_cost["material"],0)
+        self.sandtrap_storage["labour"] = round(self.sandtrap_cost["excavation labour"] + self.sandtrap_cost["structure labour"] + self.sandtrap_cost["laying"],0)

@@ -32,17 +32,17 @@ class Penstock:
 
 
     def calculate_penstock_dimensions(self):
-        di_penstock=((4*(self.site_data["used_flow"])/self.penstock_data["velocity"])/np.pi)**(0.5)
+        di_penstock=(((4*self.site_data["used_flow"])/(self.penstock_data["velocity"]*np.pi))**(0.5))
         degree=np.deg2rad(self.penstock_data["cs_degree"])
         di_spillway=((self.site_data["used_flow"]/(111*((self.penstock_data["height drop"]/\
         self.penstock_data["penstock length"])**0.5)*(np.pi-0.5*(degree-np.sin(degree)))*(((np.pi-0.5*(degree-np.sin(degree)))/\
         ((2*np.pi-degree)))**(2/3))))**(1/2.66))*2
         v_anker=(((di_penstock/2)**2)*np.pi)*self.penstock_data["penstock length"] #1m^3 per 1 ton pipe
         v_pressureblock=self.site_data["used_flow"]*20 #flatrate assumption
-        tailrace_basin_width=(self.site_data["used_flow"]**(1/3))
-        v_tailrace_basin=(tailrace_basin_width**2)*2+((tailrace_basin_width+0.8)*tailrace_basin_width)*3 #site length of square, 5 sides, thickness
-        excavation_vol=(di_penstock**2)*2*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock+\
-                       (tailrace_basin_width+0.8)*tailrace_basin_width*0.4 # 1d deep, 2d width + gravel
+        tailrace_basin_width=((self.site_data["used_flow"]*20)**(1/3))
+        v_tailrace_basin=(tailrace_basin_width**2)*2+((tailrace_basin_width+0.5)*tailrace_basin_width)*3 #site length of square, 5 sides, thickness
+        excavation_vol=2*di_penstock*2*(di_penstock+self.raw_material["gravel_thickness"])*self.penstock_data["penstock length"]+v_anker+0.5*v_pressureblock+\
+                       (tailrace_basin_width+0.8)*tailrace_basin_width*0.25 # 1d deep, 2d width + gravel
         gravel_sqm=2*di_penstock*self.penstock_data["penstock length"]+4 #to be edited later when v_pressureblock is available
 
         self.penstock_dimensions["excavation_vol"] = excavation_vol
@@ -149,7 +149,7 @@ class Penstock:
         self.penstock_cost["installation labour"] = (self.penstock_data["penstock length"] / self.penstock_data["joint distance"])*\
                                                     8*(self.labour_cost["skill_worker"]+self.labour_cost["noskill_worker"]) #16 hours per 10m pipe
 
-        self.penstock_storage["material"] = self.penstock_cost["raw material"] + self.penstock_cost["material"]
-        self.penstock_storage["labour"] = self.penstock_cost["excavation labour"] + self.penstock_cost["structure labour"] +\
-                                          self.penstock_cost["laying"] +self.penstock_cost["installation labour"]
+        self.penstock_storage["material"] = round(self.penstock_cost["raw material"] + self.penstock_cost["material"],0)
+        self.penstock_storage["labour"] = round(self.penstock_cost["excavation labour"] + self.penstock_cost["structure labour"] +\
+                                          self.penstock_cost["laying"] +self.penstock_cost["installation labour"],0)
 

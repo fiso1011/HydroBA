@@ -35,7 +35,7 @@ class Powerhouse:
 
     def calculate_powerhouse_dimensions(self):
         exc_1 = (5 ** 2) * np.tan(np.arcsin(self.penstock_data["height drop"] / self.penstock_data["penstock length"])) *\
-                0.5 * 10 * 0.5  #building 5*10m slope excavation,half width terrace
+                0.5 * 10 #building 5*10m slope excavation
         exc_2 = 5 * 10 * (0.5 + self.raw_material["gravel_thickness"]) + (1.5 + 2 * self.powerhouse_data["wall_width"]) * 1.5 *\
                 5  # Foundation and Channel under powerhouse
         foundation_vol = 5 * 10 * 0.5
@@ -63,14 +63,15 @@ class Powerhouse:
         roofing = self.powerhouse_material["roofing"]
 
         # tailrace pipe
+        di_tailrace=(((4*self.site_data["used_flow"])/(self.penstock_data["velocity"]*np.pi))**(0.5))
         if self.powerhouse_material["tailrace material"] == "PVC":
-            pipe_cost = 0.00005 * (6) *np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*self.powerhouse_data["tailrace length"]  # only pipe
-            joint_cost = 0.0045 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.98)*\
+            pipe_cost = 0.00005 * (6) *np.power((di_tailrace * 1000), 1.98)*self.powerhouse_data["tailrace length"]  # only pipe
+            joint_cost = 0.0045 * np.power((di_tailrace * 1000), 1.98)*\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05
         elif self.powerhouse_material["tailrace material"] == "HDPE":
-            pipe_cost = (0.00004 * (6) + 0.00008) * np.power((self.powerhouse_data["di_tailrace"] * 1000), 1.99) *self.powerhouse_data["tailrace length"]  # only pipe
-            joint_cost = 0.0018 * np.power((self.powerhouse_data["di_tailrace"] * 1000), 2.18) *\
+            pipe_cost = (0.00004 * (6) + 0.00008) * np.power((di_tailrace * 1000), 1.99) *self.powerhouse_data["tailrace length"]  # only pipe
+            joint_cost = 0.0018 * np.power((di_tailrace* 1000), 2.18) *\
                          (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"])
             bolts_cost = (pipe_cost + joint_cost) * 0.05
         tailrace_total_cost = (pipe_cost + joint_cost + bolts_cost)
@@ -88,17 +89,17 @@ class Powerhouse:
         lightning_protection = self.powerhouse_material["lightning protection"]
         electrics_fix = self.powerhouse_material["electrics fix"]
         electrics_var = self.site_data["power"]*30 #30 USD kWh
-        self.powerhouse_cost["material"] = roofing + gravel + tailrace_total_cost + turbine_cost + lightning_protection +\
-                                           electrics_fix + electrics_var
+        self.powerhouse_cost["material"] = round(roofing + gravel + tailrace_total_cost + turbine_cost + lightning_protection +\
+                                           electrics_fix + electrics_var,0)
 
-        self.powerhouse_storage["tailrace pipe total"] = tailrace_total_cost
-        self.powerhouse_storage["turbine_cost"] = turbine_cost
-        self.powerhouse_storage["electric_equipment_cost"] = lightning_protection + electrics_fix + electrics_var
-        self.powerhouse_storage["powerhouse_cost"]=self.powerhouse_cost["raw material"]+self.powerhouse_cost["material"]-\
-                                                   turbine_cost-self.powerhouse_storage["electric_equipment_cost"]
-        self.powerhouse_storage["pipe volume"] = np.pi * ((self.powerhouse_data["di_tailrace"] / 2) ** 2) * \
-                                                     self.powerhouse_data["tailrace length"]
-        self.powerhouse_storage["tailrace total cost"]=tailrace_total_cost
+        self.powerhouse_storage["tailrace pipe total"] = round(tailrace_total_cost,0)
+        self.powerhouse_storage["turbine_cost"] = round(turbine_cost,0)
+        self.powerhouse_storage["electric_equipment_cost"] = round(lightning_protection + electrics_fix + electrics_var,0)
+        self.powerhouse_storage["powerhouse_cost"]=round(self.powerhouse_cost["raw material"]+self.powerhouse_cost["material"]-\
+                                                   turbine_cost-self.powerhouse_storage["electric_equipment_cost"],0)
+        self.powerhouse_storage["pipe volume"] = round(np.pi * ((di_tailrace / 2) ** 2) * \
+                                                     self.powerhouse_data["tailrace length"],0)
+        self.powerhouse_storage["tailrace total cost"]=round(tailrace_total_cost,0)
 
     def calculate_powerhouse_labour(self):
         self.powerhouse_cost["excavation labour"] = (self.powerhouse_dimensions["excavation_vol"] *\
@@ -110,22 +111,22 @@ class Powerhouse:
         concreting_labour = (self.help1["structure_vol"] * self.labour_time["concreting"]) * self.labour_cost["skill_worker"]
         masonry_labour = (self.help2["structure_vol"] * self.labour_time["bricklaying"]) * self.labour_cost["skill_worker"]
 
-        building_installation = 8 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # 16h: roof, lightning protection
-        tailrace_installation = (self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"]) * 4 *\
-                                (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])  # to be edited later
-        turbine_installation = 50 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
-        electrical_installation = 100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"])
+        building_installation = round(8 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"]),0) # 16h: roof, lightning protection
+        tailrace_installation = round((self.powerhouse_data["tailrace length"] / self.penstock_data["joint distance"]) * 4 *\
+                                (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"]),0)
+        turbine_installation = round(50 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"]),0)
+        electrical_installation = round(100 * (self.labour_cost["skill_worker"] + self.labour_cost["noskill_worker"]),0)
 
-        hauling_cost = (((self.help1["structure_vol"] + self.help2["structure_vol"] + self.powerhouse_dimensions["gravel_sqm"] *\
+        hauling_cost = round((((self.help1["structure_vol"] + self.help2["structure_vol"] + self.powerhouse_dimensions["gravel_sqm"] *\
                           self.raw_material["gravel_thickness"] + self.help2["contact_sqm"] * self.raw_material["surface_finish"])*\
-                         self.constants["p_structure"]) / 50) * 2 * self.labour_cost["hauling_cost"]
+                         self.constants["p_structure"]) / 50) * 2 * self.labour_cost["hauling_cost"],0)
 
-        self.powerhouse_cost["structure labour"] = concreting_labour + masonry_labour + hauling_cost
-        self.powerhouse_cost["installation labour"] = building_installation + tailrace_installation + \
-                                                      turbine_installation + electrical_installation
-        self.powerhouse_storage["material"] = self.powerhouse_cost["raw material"] + self.powerhouse_cost["material"]
-        self.powerhouse_storage["labour"] = self.powerhouse_cost["excavation labour"] + self.powerhouse_cost["structure labour"] +\
-                                            self.powerhouse_cost["laying"]+self.powerhouse_cost["installation labour"]
-        self.powerhouse_storage["turbine install"]=turbine_installation
-        self.powerhouse_storage["electrics install"]=electrical_installation
-        self.powerhouse_storage["powerhouse install"]=tailrace_installation+building_installation
+        self.powerhouse_cost["structure labour"] = round(concreting_labour + masonry_labour + hauling_cost,0)
+        self.powerhouse_cost["installation labour"] = round(building_installation + tailrace_installation + \
+                                                      turbine_installation + electrical_installation,0)
+        self.powerhouse_storage["material"] = round(self.powerhouse_cost["raw material"] + self.powerhouse_cost["material"],0)
+        self.powerhouse_storage["labour"] = round(self.powerhouse_cost["excavation labour"] + self.powerhouse_cost["structure labour"] +\
+                                            self.powerhouse_cost["laying"]+self.powerhouse_cost["installation labour"],0)
+        self.powerhouse_storage["turbine install"]=round(turbine_installation,0)
+        self.powerhouse_storage["electrics install"]=round(electrical_installation,0)
+        self.powerhouse_storage["powerhouse install"]=round(tailrace_installation+building_installation,0)
