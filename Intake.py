@@ -63,7 +63,7 @@ class Intake:
     def calculate_intake_labour(self):
         self.intake_cost["excavation labour"] = self.intake_dimensions["foundation_vol"] *\
                                                 (1.1123*np.exp(0.4774*self.site_data["excavating_factor"])) * self.labour_cost["noskill_worker"]
-
+        print()
         # calculate structure material work
         if self.intake_material["structural material"] =="RCC":
             formwork_labour=self.intake_dimensions["contact_sqm"]*self.labour_time["formwork"]*self.labour_cost["skill_worker"]

@@ -215,70 +215,25 @@ df.to_excel(string4)
 print("Exported to Excel")
 
 #Plot using different methods
-def plot_bar_chart():
-    #BAR CHART
-    # Creating our own dataframe
-    #https://www.geeksforgeeks.org/how-to-annotate-bars-in-barplot-with-matplotlib-in-python/
-    data = {"Name": ["Wasserzulauf","Fallrohr&Überlauf","Maschinenhaus","Turbine","Elektrik","Planung&Sonstiges"],
-            "Cost": [(intake_invest+channel_invest+sandtrap_invest),penstock_invest,powerhouse_invest,\
-                turbine_invest,electrics_invest,(planning_invest+misc_invest)]}
-
-    # Now convert this dictionary type data into a pandas dataframe
-    # specifying what are the column names
-    df = pd.DataFrame(data, columns=['Name', 'Cost'])
-
-    # Defining the plot size
-    plt.figure(figsize=(8, 8))
-
-    # Defining the values for x-axis, y-axis
-    # and from which datafarme the values are to be picked
-    plots = sns.barplot(x="Name", y="Cost", data=df)
-
-    # Iterrating over the bars one-by-one
-    for bar in plots.patches:
-        # Using Matplotlib's annotate function and
-        # passing the coordinates where the annotation shall be done
-        # x-coordinate: bar.get_x() + bar.get_width() / 2
-        # y-coordinate: bar.get_height()
-        # free space to be left to make graph pleasing: (0, 8)
-        # ha and va stand for the horizontal and vertical alignment
-        plots.annotate(format(bar.get_height(), '.2f'),
-                       (bar.get_x() + bar.get_width() / 2,
-                        bar.get_height()), ha='center', va='center',
-                       size=15, xytext=(0, 8),
-                       textcoords='offset points')
-
-    # Setting the label for x-axis
-    plt.xlabel("Abschnitte", size=14)
-
-    # Setting the label for y-axis
-    plt.ylabel("Dollar", size=14)
-
-    # Setting the title for the graph
-    plt.title("Kosten der Abschnitte", size=20)
-
-    # Fianlly showing the plot
-    # https://riptutorial.com/matplotlib/example/14063/plot-with-gridlines
-    # Show the major grid lines with dark grey lines
-    plt.grid(b=True, which='major', color='#666666', linestyle='-')
-
-    # Show the minor grid lines with very faint and almost transparent grey lines
-    plt.minorticks_on()
-    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-    plt.show()
-    plt.show()
-
 def plot_pie_chart():
-        #PIE CHART
-        labels=["Wasserzulauf","Fallrohr&Überlauf","Maschinenhaus","Turbine","Elektrik","Planung&Sonstiges"]
-        sizes=[((intake_invest+channel_invest+sandtrap_invest)/total_investing_cost),\
-                    (penstock_invest/total_investing_cost),(powerhouse_invest/total_investing_cost),\
-                    (turbine_invest/total_investing_cost),(electrics_invest/total_investing_cost),\
-                    ((planning_invest+misc_invest)/total_investing_cost)]
-        plt.pie(sizes,labels=labels,autopct='%1.2f%%')
-        plt.show()
+    plt.rcParams['font.size'] = 18
+    plt.figure(figsize=plt.figaspect(1))
+    values = [(intake_invest+channel_invest+sandtrap_invest),(penstock_invest), (powerhouse_invest ), \
+             (turbine_invest), (electrics_invest),((planning_invest + misc_invest))]
+    labels = ["Wasserzulauf", "Fallrohr&Überlauf", "Maschinenhaus", "Turbine", "Elektrik", "Planung&Sonstiges"]
 
-def plot_bar2_chart():
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct * total / 100.0))
+            return '{p:.2f}%  ({v:d})'.format(p=pct, v=val)
+
+        return my_autopct
+
+    plt.pie(values, labels=labels, autopct=make_autopct(values))
+    plt.show()
+
+def plot_bar_chart():
     #https://matplotlib.org/stable/gallery/lines_bars_and_markers/bar_stacked.html#sphx-glr-gallery-lines-bars-and-markers-bar-stacked-py
     #BAR CHART 2, Cost of the sections without risk added
     rest_cost=((planning_invest+misc_invest)*(1/3))
@@ -328,10 +283,8 @@ def plot_bar2_chart():
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
     plt.show()
 
-plottype=input("Enter Type: 1.Bar 2.Pie 3.Bar2:")
+plottype=input("Enter Type: 1.Bar 2.Pie:")
 if plottype=="Bar":
     plot_bar_chart()
 elif plottype=="Pie":
     plot_pie_chart()
-elif plottype=="Bar2":
-    plot_bar2_chart()
